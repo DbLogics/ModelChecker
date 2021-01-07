@@ -357,6 +357,7 @@ public class MainDesktopIfc extends javax.swing.JFrame {
     
             }  
            catch (Exception ex) {
+                Logger.getLogger(MainDesktopIfc.class.getName()).log(Level.SEVERE, null, ex);
                 JOptionPane.showMessageDialog(this,"Some error Occurred");
             }
             }

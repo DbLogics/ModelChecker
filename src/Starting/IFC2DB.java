@@ -550,7 +550,7 @@ public class IFC2DB {
                     LocalPlacementHashNo=d[5].replace("#","").replace("(","").replace(")","").trim().equals("$")?null:d[5].replace("#","").replace("(","").replace(")","").trim();
                     ProductDefinationHashNo=d[6].replace("#","").replace("(","").replace(")","").trim().equals("$")?null:d[6].replace("#","").replace("(","").replace(")","").trim();
                     
-                    c.createWallStandardCase(hashno,GlobalId,OwnerHistoryHashNo,LocalPlacementHashNo,ProductDefinationHashNo,fileId);
+                    c.createWallStandardCase(hashno,GlobalId,OwnerHistoryHashNo,LocalPlacementHashNo,ProductDefinationHashNo,d[2],fileId);
                     c.DmlStatement();
                     break; 
                         
@@ -679,7 +679,7 @@ public class IFC2DB {
                     case "IFCMEASUREWITHUNIT":
                     d=data.replace(")", "").split(",");
                     String SIUnitHashNo=d[1].replace("#","").replace("(","").replace(")","").trim().equals("$")?null:d[1].replace("#","").replace("(","").replace(")","").trim();
-                    String dataof=d[0].replace("IFCTIMEMEASURE(", "").replace("IFCPLANEANGLEMEASURE(", "").replace(")","").trim();
+                    String dataof=d[0].replace("IFCTIMEMEASURE(", "").replace("IFCRATIOMEASURE(","").replace("IFCPLANEANGLEMEASURE(", "").replace(")","").trim();
                     c.createMeasureWithUnit(hashno,dataof,SIUnitHashNo,fileId);
                     c.DmlStatement();
                     break; 

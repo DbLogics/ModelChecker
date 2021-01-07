@@ -205,6 +205,8 @@ public class MainWindowIfc extends javax.swing.JFrame implements Runnable{
   
     private void exitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitActionPerformed
         // TODO add your handling code here:
+        Structural_Analysis.Connect c=new Structural_Analysis.Connect();
+        c.ClearDatabase();
         this.dispose();
         
     }//GEN-LAST:event_exitActionPerformed

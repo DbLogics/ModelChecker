@@ -505,8 +505,8 @@ public void createShapeRepresentationMapping(long shaperepresentationhashno, Str
         query="insert into IFC_WallType(HashNo,GlobalId,OwnerHistoryHashNo,Name,PredefinedType,FKFileId) values("+hashno+",'"+GlobalId+"',"+Long.parseLong(OwnerHistoryHashNo)+",'"+Name+"','"+Type+"',"+fileId+")";      
     }
 
-    public void createWallStandardCase(long hashno, String GlobalId, String OwnerHistoryHashNo, String LocalPlacementHashNo, String ProductDefinationHashNo, int fileId) {
-        query="insert into IFC_WallStandardCase(HashNo,GlobalId,OwnerHistoryHashNo,LocalPlacementHashNo,ProductDefinationShapeHashNo,FKFileId) values("+hashno+",'"+GlobalId+"',"+Long.parseLong(OwnerHistoryHashNo)+","+Long.parseLong(LocalPlacementHashNo)+","+Long.parseLong(ProductDefinationHashNo)+","+fileId+")";      
+    public void createWallStandardCase(long hashno, String GlobalId, String OwnerHistoryHashNo, String LocalPlacementHashNo, String ProductDefinationHashNo,String Name, int fileId) {
+        query="insert into IFC_WallStandardCase(HashNo,GlobalId,OwnerHistoryHashNo,LocalPlacementHashNo,ProductDefinationShapeHashNo,Name,FKFileId) values("+hashno+",'"+GlobalId+"',"+Long.parseLong(OwnerHistoryHashNo)+","+Long.parseLong(LocalPlacementHashNo)+","+Long.parseLong(ProductDefinationHashNo)+",'"+Name+"',"+fileId+")";      
     }
 
     public void createRelAssociateMaterial(long hashno, String GlobalId, String OwnerHistoryHashNo, String Name, String RelatedObjectHashNo, String RelatedMaterialHashNo, int fileId) {
@@ -974,7 +974,7 @@ public void createShapeRepresentationMapping(long shaperepresentationhashno, Str
     }
 
     public void getWalls(Float Position, String FileId) {
-        query="select distinct wall.GlobalId,'Wall' as Entity,ext.Depth as Height,matlay.Thickness as Thickness \n" +
+        query="select distinct wall.GlobalId,wall.Name as Name,'Wall' as Entity,ext.Depth as Height,matlay.Thickness as Thickness \n" +
 "from IFC_RelContainedInSpacialStructure as sp \n" +
 "join IFC_RelContainedInSpacialStructureMapping as spmap on sp.HashNo=spmap.RelContainedHashNo and spmap.FKFileId=sp.FKFileId\n" +
 "join IFC_BuildingStorey as sto on sp.BuildingStoreyHashNo=sto.HashNo and sto.FKFileId=sp.FKFileId\n" +
@@ -1104,8 +1104,73 @@ public void createShapeRepresentationMapping(long shaperepresentationhashno, Str
 "join IFC_CartesianPoint as cart on arbmap.CartesianHashNo=cart.HashNo and cart.FKFileId=wall.FKFileId\n" +
 "where wall.FKFileId="+FileId+" and wall.GlobalId='"+GlobalId+"'";
     }
-            
 
+    public void getJointsOfWall(String GlobalId, String FileId) {
+        query="select count(*) as 'Joints'\n" +
+"from IFC_WallStandardCase as wall\n" +
+"join IFC_RelConnectsPathElements as con on (wall.HashNo=con.RelatingElement1HashNo or wall.HashNo=con.RelatingElement2HashNo)\n" +
+"where wall.FKFileId="+FileId   +" and wall.GlobalId='"+GlobalId+"'";
+    }
+
+    public void getOpeningsinWall(String GlobalId, String FileId) {
+        query="select count(*) as 'Openings'\n" +
+"from IFC_WallStandardCase as wall\n" +
+"join IFC_RelVoisElement as con on wall.HashNo=con.WallStandardCaseHashNo\n" +
+"where wall.FKFileId="+FileId+" and wall.GlobalId='"+GlobalId+"'";
+    }
+
+    public void getBiggestOpeningWall(String GlobalId, String FileId) {
+        query="select Max(ext.Depth) as 'Height'\n" +
+"from IFC_WallStandardCase as wall\n" +
+"join IFC_RelVoisElement as con on wall.HashNo=con.WallStandardCaseHashNo\n" +
+"join IFC_OpeningElement as opens on con.OpeningElementHashNo=opens.HashNo\n" +
+"join IFC_ProductDefinationShapeMapping as prodmap on opens.ProductDefinationShapeHashNo=prodmap.ProductDefinationShapeHashNo\n" +
+"join IFC_ShapeRepresentationMapping as shapemap on prodmap.ShapeRepresentationHashNo=shapemap.ShapeRepresentationHashNo\n" +
+"join IFC_ExtrudedAreaSolid as ext on shapemap.ForwardHashNo=ext.HashNo\n" +
+"where wall.FKFileId="+FileId+" and wall.GlobalId='"+GlobalId+"'";
+    }
+    
+    public void getSingleLineWalls(String GlobalId,Float Position,String FileId)
+    {
+        query="declare @GlobalId nvarchar(max)\n" +
+"set @GlobalId='"+GlobalId+"'\n" +
+"select distinct wall.GlobalId\n" +
+"from IFC_RelContainedInSpacialStructure as sp \n" +
+"join IFC_RelContainedInSpacialStructureMapping as spmap on sp.HashNo=spmap.RelContainedHashNo and spmap.FKFileId=sp.FKFileId\n" +
+"join IFC_BuildingStorey as sto on sp.BuildingStoreyHashNo=sto.HashNo and sto.FKFileId=spmap.FKFileId \n" +
+"join IFC_WallStandardCase as wall on spmap.StructureHashNo=wall.HashNo and wall.FKFileId=spmap.FKFileId\n" +
+"join IFC_LocalPlacement as localp on wall.LocalPlacementHashNo=localp.HashNo and localp.FKFileId=sto.FKFileId \n" +
+"join IFC_Axis2Placement3D as axis on localp.Axis2PlacementHashNo=axis.HashNo and axis.FKFileId=sto.FKFileId \n" +
+"join IFC_CartesianPoint as cart on axis.CartesianHashNo=cart.HashNo and cart.FKFileId=sto.FKFileId\n" +
+"left join IFC_Direction as dir1 on axis.Dir1HashNo=dir1.HashNo and dir1.FKFileId=sto.FKFileId\n" +
+"left join IFC_Direction as dir2 on axis.Dir2HashNo=dir2.HashNo and dir2.FKFileId=sto.FKFileId\n" +
+"where \n" +
+"cart.Ydim=(select incart.Ydim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId) \n" +
+"and cart.Zdim=(select incart.Zdim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId)\n" +
+"and dir1.Xdim=(select indir1.Xdim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir1 on inaxis.Dir1HashNo=indir1.HashNo and inwall.FKFileId=indir1.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
+"and dir1.Ydim=(select indir1.Ydim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir1 on inaxis.Dir1HashNo=indir1.HashNo and inwall.FKFileId=indir1.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
+"and dir1.Zdim=(select indir1.Zdim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir1 on inaxis.Dir1HashNo=indir1.HashNo and inwall.FKFileId=indir1.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
+"and dir2.Xdim=(select indir2.Xdim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir2 on inaxis.Dir2HashNo=indir2.HashNo and inwall.FKFileId=indir2.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
+"and dir2.Ydim=(select indir2.Ydim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir2 on inaxis.Dir2HashNo=indir2.HashNo and inwall.FKFileId=indir2.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
+"and dir2.Zdim=(select indir2.Zdim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir2 on inaxis.Dir2HashNo=indir2.HashNo and inwall.FKFileId=indir2.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
+"and sp.FKFileId="+FileId+" \n" +
+"and sto.Position="+Position+"  \n" +
+"and wall.GlobalId!=@GlobalId";
+    }
+            
+public void getConnectedWalls(String GlobalId, Float Position, String FileId)
+{
+    query="select \n" +
+"case \n" +
+"when con.RelatingElement1HashNo=wall.HashNo \n" +
+"	Then (select inwall.GlobalId from IFC_WallStandardCase as inwall where inwall.HashNo=con.RelatingElement2HashNo and inwall.FKFileId=con.FKFileId)\n" +
+"Else (select inwall.GlobalId from IFC_WallStandardCase as inwall where inwall.HashNo=con.RelatingElement1HashNo and inwall.FKFileId=con.FKFileId) end as GlobalId from IFC_RelConnectsPathElements as con \n" +
+"join IFC_WallStandardCase as wall on (con.RelatingElement1HashNo=wall.HashNo or con.RelatingElement2HashNo=wall.HashNo) and wall.FKFileId=con.FKFileId\n" +
+"join IFC_RelContainedInSpacialStructureMapping as spmap on wall.HashNo=spmap.StructureHashNo and spmap.FKFileId=con.FKFileId\n" +
+"join IFC_RelContainedInSpacialStructure as sp on spmap.RelContainedHashNo=sp.HashNo and sp.FKFileId=con.FKFileId\n" +
+"join IFC_BuildingStorey as sto on sp.BuildingStoreyHashNo=sto.HashNo and sto.FKFileId=con.FKFileId \n" +
+"where sto.Position="+Position+" and con.FKFileId="+FileId+" and wall.GlobalId='"+GlobalId+"'";
+}
    
 
     
