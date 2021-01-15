@@ -1172,7 +1172,43 @@ public void getConnectedWalls(String GlobalId, Float Position, String FileId)
 }
    
 
+    public void getOpeningDistancefromFace(String GlobalId, String FileId)
+    {
+        query="select top(1) ABS(cart.Xdim)+ABS(opencart.Xdim) as Distance\n" +
+"from IFC_RelVoisElement as relvoid \n" +
+"\n" +
+"join IFC_WallStandardCase as wall on relvoid.WallStandardCaseHashNo=wall.HashNo \n" +
+"join IFC_LocalPlacement as loc on wall.LocalPlacementHashNo=loc.HashNo\n" +
+"join IFC_Axis2Placement3D as axis on loc.Axis2PlacementHashNo=axis.HashNo\n" +
+"join IFC_CartesianPoint as cart on axis.CartesianHashNo=cart.HashNo\n" +
+"\n" +
+"join IFC_OpeningElement as opening on relvoid.OpeningElementHashNo=opening.HashNo\n" +
+"join IFC_LocalPlacement as openloc on opening.LocalPlacementHashNo=openloc.HashNo\n" +
+"join IFC_Axis2Placement3D as openaxis on openloc.Axis2PlacementHashNo=openaxis.HashNo\n" +
+"join IFC_CartesianPoint as opencart on openaxis.CartesianHashNo=opencart.HashNo\n" +
+"\n" +
+"where wall.FKFileId="+FileId+" and wall.GlobalId='"+GlobalId+"'";
+    }
     
+    
+    public void getWallDetails(String GlobalId, String FileId)
+    {
+        query="select distinct wall.GlobalId,wall.Name as Name,'Wall' as Entity,ext.Depth as Height,matlay.Thickness as Thickness \n" +
+"from IFC_RelContainedInSpacialStructure as sp \n" +
+"join IFC_RelContainedInSpacialStructureMapping as spmap on sp.HashNo=spmap.RelContainedHashNo and spmap.FKFileId=sp.FKFileId\n" +
+"join IFC_BuildingStorey as sto on sp.BuildingStoreyHashNo=sto.HashNo and sto.FKFileId=sp.FKFileId\n" +
+"join IFC_WallStandardCase as wall on spmap.StructureHashNo=wall.HashNo and wall.FKFileId=sp.FKFileId \n" +
+"join IFC_ProductDefinationShapeMapping as prodmap on wall.ProductDefinationShapeHashNo=prodmap.ProductDefinationShapeHashNo and prodmap.FKFileId=sp.FKFileId\n" +
+"join IFC_ShapeRepresentationMapping as shapemap on prodmap.ShapeRepresentationHashNo=shapemap.ShapeRepresentationHashNo and shapemap.FKFileId=sp.FKFileId\n" +
+"join IFC_ExtrudedAreaSolid as ext on shapemap.ForwardHashNo=ext.HashNo and ext.FKFileId=sp.FKFileId\n" +
+"join IFC_ArbitaryClosedProfileDef as arb on ext.RectangleProfileDefHashNo=arb.HashNo and arb.FKFileId=sp.FKFileId\n" +
+"join IFC_PolylineCartesianMapping as arbmap on arb.PolylineHashNo=arbmap.PolylineHashNo and arbmap.FKFileId=sp.FKFileId\n" +
+"join IFC_RelAssociateMaterial as mat on wall.HashNo=mat.RelatedObjectHashNo and mat.FKFileId=sp.FKFileId\n" +
+"join IFC_MaterialLayerSetUsage as matuse on mat.RelatingMaterialHashNo=matuse.HashNo and matuse.FKFileId=sp.FKFileId\n" +
+"join IFC_MaterialLayerSet as matset on matuse.MaterialLayerSetHashNo=matset.HashNo and matset.FKFileId=sp.FKFileId\n" +
+"join IFC_MaterialLayer as matlay on matset.MaterialLayerHashNo=matlay.HashNo and matlay.FKFileId=sp.FKFileId\n" +
+"where sp.FKFileId="+FileId+" and wall.GlobalId='"+GlobalId+"'";
+    }
 
 
    

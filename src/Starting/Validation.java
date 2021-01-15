@@ -743,12 +743,19 @@ DefaultListModel<String> crossJoins=new DefaultListModel<String>();
                                                                            if(joinlenres.next()!=false)
                                                                            {
                                                                                 Float Length_Of__Join_Wall=(joinlenres.getFloat("Length"))/1000;
-                                                                                
+                                                                                Float Height_Of__Join_Wall=0.0f;
+                                                                                Float Thickness_Of__Join_Wall=0.0f;
                                                                                 if((Length_Of__Join_Wall-0.095)<((Height_Of_Wall/1000)/5))
                                                                                 {
                                                                                     IsFree=true;
                                                                                 }
-                                                                                
+                                                                                c.getWallDetails(jointwalls.getElementAt(x),FileId);
+                                                                                ResultSet wallDetailsres=c.DqlStatement();
+                                                                                if(wallDetailsres.next())
+                                                                                {
+                                                                                    Height_Of__Join_Wall=wallDetailsres.getFloat("Height");
+                                                                                    Thickness_Of__Join_Wall=wallDetailsres.getFloat("Thickness");
+                                                                                }
                                                                                 c.getOpeningsinWall(jointwalls.getElementAt(x), FileId);
                                                                    try
                                                                    {
@@ -765,9 +772,19 @@ DefaultListModel<String> crossJoins=new DefaultListModel<String>();
                                                                                 {
                                                                                     float OpenSizenew=opensizeress.getFloat("Height");
                                                                                     
-                                                                                    if(OpenSizenew>(0.5*Height_Of_Wall))
+                                                                                    if(OpenSizenew>(0.5*Height_Of__Join_Wall))
                                                                                     {
-                                                                                        totopening++;
+                                                                                        c.getOpeningDistancefromFace(jointwalls.getElementAt(x), FileId);
+                                                                                        ResultSet openDisres=c.DqlStatement();
+                                                                                        if(openDisres.next())
+                                                                                        {
+                                                                                            float Distance_FromFace=openDisres.getFloat("Distance");
+                                                                                            if(Distance_FromFace>(Height_Of__Join_Wall/8))
+                                                                                            {
+                                                                                                totopening++;
+                                                                                            }
+                                                                                        }
+                                                                                        
                                                                                     }
                                                                                     
                                                                                     if(OpenSizenew>OpenSize)
@@ -973,15 +990,35 @@ DefaultListModel<String> crossJoins=new DefaultListModel<String>();
                                                                             if(Openings>0)
                                                                             {
                                                                                 
+                                                                                Float Height_Of__Join_Wall=0.0f;
+                                                                                Float Thickness_Of__Join_Wall=0.0f;
+                                                                                  c.getWallDetails(jointwalls.getElementAt(x),FileId);
+                                                                                ResultSet wallDetailsres=c.DqlStatement();
+                                                                                
+                                                                                
+                                                                                if(wallDetailsres.next())
+                                                                                {
+                                                                                    Height_Of__Join_Wall=wallDetailsres.getFloat("Height");
+                                                                                    Thickness_Of__Join_Wall=wallDetailsres.getFloat("Thickness");
+                                                                                }
                                                                                 c.getBiggestOpeningWall(jointwalls.getElementAt(x), FileId);
                                                                                 ResultSet opensizeress=c.DqlStatement();
                                                                                 if(opensizeress.next()!=false)
                                                                                 {
                                                                                     float OpenSizenew=opensizeress.getFloat("Height");
                                                                                     
-                                                                                    if(OpenSizenew>(0.5*Height_Of_Wall))
+                                                                                    if(OpenSizenew>(0.5*Height_Of__Join_Wall))
                                                                                     {
-                                                                                        totopening++;
+                                                                                      c.getOpeningDistancefromFace(jointwalls.getElementAt(x), FileId);
+                                                                                        ResultSet openDisres=c.DqlStatement();
+                                                                                        if(openDisres.next())
+                                                                                        {
+                                                                                            float Distance_FromFace=openDisres.getFloat("Distance");
+                                                                                            if(Distance_FromFace>(Height_Of__Join_Wall/8))
+                                                                                            {
+                                                                                                totopening++;
+                                                                                            }
+                                                                                        }
                                                                                     }
                                                                                     
                                                                                     if(OpenSizenew>OpenSize)
