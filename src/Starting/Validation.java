@@ -92,7 +92,7 @@ public class Validation extends javax.swing.JInternalFrame {
     DefaultListModel<Item>  listModel = new DefaultListModel<Item>();
     DefaultListModel<String>  singlelinewalls = new DefaultListModel<String>();
     DefaultListModel<String>  jointwalls = new DefaultListModel<String>();
-
+DefaultListModel<String> crossJoins=new DefaultListModel<String>();
     public Validation() {
         initComponents();
         getContentPane().setBackground(new Color(197,226,252));
@@ -399,7 +399,99 @@ public class Validation extends javax.swing.JInternalFrame {
                                                       int Joints=joinres.getInt("Joints");
                                                       if(Joints>0)
                                                       {
-                                                          if(Float.compare(item.getPosiFloat(),Start)==0)
+                                                          String GlobalId=Seprs.getString("GlobalId"); 
+                                                          
+                                                          boolean IsColumn=false;
+                                                          float OpenSize=0.0f;
+                                                          
+                                                          c.getConnectedWalls(Seprs.getString("GlobalId"),item.getPosiFloat(),FileId);
+                                                          ResultSet connectedwallres=c.DqlStatement();
+                                                          while(connectedwallres.next()!=false)
+                                                          {
+                                                            jointwalls.addElement(connectedwallres.getString("GlobalId"));
+                                                          }
+                                                          int totopening=0;
+                                                          if(jointwalls.size()>=2)
+                                                          {
+                                                              
+                                                              for(int y=0;y<jointwalls.size();y++)
+                                                              {
+                                                                   c.getOpeningsinWall(jointwalls.getElementAt(y), FileId);
+                                                                   try
+                                                                   {
+                                                                        ResultSet openres=c.DqlStatement();
+                                                                        if(openres.next()!=false)
+                                                                        {
+                                                                             int Opening=openres.getInt("Openings");
+                                                                            if(Opening>0)
+                                                                            {
+                                                                                totopening++;
+                                                                                c.getBiggestOpeningWall(jointwalls.getElementAt(y), FileId);
+                                                                                ResultSet opensizeres=c.DqlStatement();
+                                                                                if(opensizeres.next()!=false)
+                                                                                {
+                                                                                    float OpenSizenew=opensizeres.getFloat("Height");
+                                                                                    if(OpenSizenew>OpenSize)
+                                                                                    {
+                                                                                        OpenSize=OpenSizenew;
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                   }
+                                                                   catch(Exception ex)
+                                                                   {
+                                                                       
+                                                                   }
+                                                          }
+                                                              if(totopening>1)
+                                                              {
+                                                                  IsColumn=true;
+                                                              }
+                                                          }
+                                                         
+                                                              
+                                                                  if(IsColumn)
+                                                                  {
+                                                                      
+                                                                            r1c = row.createCell(7);
+                                                                            r1c.setCellValue(totopening);
+                                                                            
+                                                                            r1c = row.createCell(8);
+                                                                            r1c.setCellValue(OpenSize); 
+                                                                            
+                                                                       if(Float.compare(item.getPosiFloat(),Start)==0)
+                                                                        {
+                                                                            Float Height=(Lower_Slab_Thickness/1000)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
+                                                                            Double Effective_Height=(0.75*Height)+(0.25*(OpenSize/1000));
+                                                                            
+                                                                            r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Height); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue(Effective_Height); 
+                                                        
+                                                                            r1c = row.createCell(11);
+                                                                            r1c.setCellValue("0.75*H + 0.25*H1"); 
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            Float Height=((Lower_Slab_Thickness/1000)/2)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
+                                                                            Double Effective_Height=0.75*Height+(0.25*(OpenSize/1000)); 
+                                                                            
+                                                                            r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Height); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue(Effective_Height); 
+                                                        
+                                                                            r1c = row.createCell(11);
+                                                                            r1c.setCellValue("0.75*H + 0.25*H1"); 
+                                                                        }
+                                                                  }
+                                                                  else
+                                                                  {
+                                                                      if(Float.compare(item.getPosiFloat(),Start)==0)
                                                           {
                                                             Float Height=(Lower_Slab_Thickness/1000)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
                                                             Double Effective_Height=0.75*Height;
@@ -429,60 +521,16 @@ public class Validation extends javax.swing.JInternalFrame {
                                                              r1c = row.createCell(11);
                                                              r1c.setCellValue("0.75*H"); 
                                                           }
+                                                                  }
+                                                              
+                                                              
+                                                          
+                                                          
+                                                          
                                                       }
                                                       else
                                                       {
-                                                          c.getOpeningsinWall(Seprs.getString("GlobalId"), FileId);
-                                                          ResultSet openres=c.DqlStatement();
-                                                          if(openres.next()!=false)
-                                                          {
-                                                              int Opening=openres.getInt("Openings");
-                                                              if(Opening>0)
-                                                              {
-                                                                  c.getBiggestOpeningWall(Seprs.getString("GlobalId"), FileId);
-                                                                  ResultSet opensizeres=c.DqlStatement();
-                                                                  if(opensizeres.next()!=false)
-                                                                  {
-                                                                      Float OpeningHeight=opensizeres.getFloat("Height");
-                                                                            r1c = row.createCell(7);
-                                                                            r1c.setCellValue(Opening);
-                                                                            
-                                                                            r1c = row.createCell(8);
-                                                                            r1c.setCellValue(OpeningHeight); 
-                                                                            
-                                                                       if(Float.compare(item.getPosiFloat(),Start)==0)
-                                                                        {
-                                                                            Float Height=(Lower_Slab_Thickness/1000)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
-                                                                            Double Effective_Height=(0.75*Height)+(0.25*OpeningHeight);
-                                                                            
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Height); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue(Effective_Height); 
-                                                        
-                                                                            r1c = row.createCell(11);
-                                                                            r1c.setCellValue("0.75*H + 0.25*H1"); 
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            Float Height=((Lower_Slab_Thickness/1000)/2)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
-                                                                            Double Effective_Height=0.75*Height+(0.25*OpeningHeight); 
-                                                                            
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Height); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue(Effective_Height); 
-                                                        
-                                                                            r1c = row.createCell(11);
-                                                                            r1c.setCellValue("0.75*H + 0.25*H1"); 
-                                                                        }
-                                                                  }
-                                                              }
-                                                              else
-                                                              {
-                                                                  Float Height=(Lower_Slab_Thickness/1000)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
+                                                           Float Height=(Lower_Slab_Thickness/1000)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
                                                                   Float Effective_Height=Height;
                                                                   
                                                                             r1c = row.createCell(9);
@@ -493,8 +541,6 @@ public class Validation extends javax.swing.JInternalFrame {
                                                         
                                                                             r1c = row.createCell(11);
                                                                             r1c.setCellValue("H"); 
-                                                              }
-                                                          }
                                                       }
                                                   }
                                               }
@@ -506,7 +552,7 @@ public class Validation extends javax.swing.JInternalFrame {
                                       }
                                       Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                                       Path path = FileSystems.getDefault().getPath("").toAbsolutePath();
-                                      File ouputfiles = new File(path+"\\IFC_Validations.xlsx");
+                                      File ouputfiles = new File(path+"\\IFC_Height_Validations.xlsx");
                                       FileOutputStream out = new FileOutputStream(ouputfiles);
                                       workbook.write(out);
                                       out.close();
@@ -529,18 +575,50 @@ public class Validation extends javax.swing.JInternalFrame {
                           String DVal=item.getName();
                           if(DVal.equals(Val))
                           {
-
+                              
+                XSSFWorkbook workbook = new XSSFWorkbook ();
+		XSSFSheet sheet = workbook.createSheet();
+                
+                //Create First Row
+		XSSFRow row1 = sheet.createRow(0);
+		XSSFCell r1c1 = row1.createCell(0);
+		r1c1.setCellValue("Entity");
+		XSSFCell r1c2 = row1.createCell(1);
+		r1c2.setCellValue("GlobalId");
+                XSSFCell r1c12 = row1.createCell(2);
+		r1c12.setCellValue("Name");
+		XSSFCell r1c3 = row1.createCell(3);
+		r1c3.setCellValue("Storey");
+                XSSFCell r1c4 = row1.createCell(4);
+		r1c4.setCellValue("Height");
+                XSSFCell r1c5 = row1.createCell(5);
+		r1c5.setCellValue("Length");
+                XSSFCell r1c6 = row1.createCell(6);
+		r1c6.setCellValue("Thickness");
+                XSSFCell r1c7 = row1.createCell(7);
+		r1c7.setCellValue("No. Of Openings");
+                XSSFCell r1c8 = row1.createCell(8);
+		r1c8.setCellValue("Height of Biggest Opening");
+                XSSFCell r1c10 = row1.createCell(9);
+		r1c10.setCellValue("Effective Length");
+                XSSFCell r1c11 = row1.createCell(10);
+		r1c11.setCellValue("Formula");
+                
+               
                                       c.getWalls(item.getPosiFloat(),FileId);
                                       Seprs=c.DqlStatement();
+                                      int rowcount=1;
                                       while(Seprs.next()!=false)
                                       {
+                                         
+
+                                          
                                           Float Start=0.0f;
                                           c.getLengthOfWall(Seprs.getString("GlobalId"), FileId);
                                           ResultSet lenres=c.DqlStatement();
                                           if(lenres.next()!=false)
                                           {
-                                              Float Length_Of_Wall=lenres.getFloat("Length");
-                                              Float Thickness_Of_Wall=Seprs.getFloat("Thickness");
+                                              
                                               c.getSingleLineWalls(Seprs.getString("GlobalId"),item.getPosiFloat(),FileId);
                                               ResultSet singlelinewallsres=c.DqlStatement();
                                               while(singlelinewallsres.next()!=false)
@@ -555,87 +633,510 @@ public class Validation extends javax.swing.JInternalFrame {
                                                   jointwalls.addElement(connectedwallres.getString("GlobalId"));
                                               }
                                               int counter=0;
+                                              
                                               for(int j=0;j<singlelinewalls.size();j++)
                                               {
+                                                  
                                                  for(int k=0;k<jointwalls.size();k++)
                                                 {
                                                   if(singlelinewalls.getElementAt(j).equals(jointwalls.getElementAt(k)))
                                                   {
                                                       counter++;
+                                                    
                                                   }
-                                                } 
+                                                 
+                                                }
+                                                
                                               }
+                                              
+                                              for(int k=0;k<jointwalls.size();k++)
+                                                {
+                                                    boolean IsCrossJoin=true;
+                                                    for(int j=0;j<singlelinewalls.size();j++)
+                                              {
+                                                  if(singlelinewalls.getElementAt(j).equals(jointwalls.getElementAt(k)))
+                                                  {
+                                                     IsCrossJoin=false;
+                                                    
+                                                  }
+                                                  
+                                              }
+                                                    if(IsCrossJoin)
+                                                    {
+                                                        crossJoins.addElement(jointwalls.getElementAt(k));
+                                                    }
+                                                 
+                                                }
+                                              
+                                                                           
                                                c.getOpeningsinWall(Seprs.getString("GlobalId"), FileId);
+                                               
+                                               int totopening=0;
+                                               boolean isColumn=false;
+                                               Float OpenSize=0.0f;
                                                           ResultSet openres=c.DqlStatement();
                                                           if(openres.next()!=false)
                                                           {
                                                               int Opening=openres.getInt("Openings");
                                                               if(Opening>0)
                                                               {
+                                                                            
                                                                  c.getBiggestOpeningWall(Seprs.getString("GlobalId"), FileId);
                                                                   ResultSet opensizeres=c.DqlStatement();
                                                                   if(opensizeres.next()!=false)
                                                                   {
                                                                       Float OpeningHeight=opensizeres.getFloat("Height");
-                                                                      Float Height_Of_Wall=Seprs.getFloat("Thickness");
-                                                                      if((0.5*Height_Of_Wall)<OpeningHeight)
+                                                                      Float Height_Of_Wall=Seprs.getFloat("Height");
+                                                                      
+                                                                      
+                                                                            
+                                                                      boolean IsFree=false;
+                                                                      if(OpeningHeight>(0.5*Height_Of_Wall))
                                                                       {
-                                               
-                                               if(counter==1)
-                                              {
-                                                  if((Thickness_Of_Wall*4)>Length_Of_Wall)
-                                                  {
-                                                    Float Effective_Length=2*Length_Of_Wall;
-                                                  }
-                                                  else
-                                                  {
-                                                      Double Effective_Length=1.5*Length_Of_Wall;
-                                                  }
-                                                  
-                                              }
-                                              
+                                                                        // r1c = row.createCell(10);
+                                                                         // r1c.setCellValue("Not Applicable");
                                                                       }
                                                                       else
                                                                       {
-                                                                       if(counter==0)
-                                              {
-                                                  Float EffectiveLength=Length_Of_Wall;
-                                              }
-                                              else if(counter==1)
-                                              {
-                                                  Double Effective_Length=0.9*Length_Of_Wall;
-                                              }
-                                              else
-                                              {
-                                                  Double Effective_Length=0.8*Length_Of_Wall;
-                                              }   
+                                                                           XSSFRow row = sheet.createRow(rowcount);
+                                          rowcount++;
+                                              XSSFCell r1c = row.createCell(0);
+                                              r1c.setCellValue("Wall");
+                                              Float Length_Of_Wall=lenres.getFloat("Length");
+                                              
+                                              
+                                              Float Thickness_Of_Wall=Seprs.getFloat("Thickness");
+                                              
+                                              Float Extra_Length=crossJoins.size()*(Thickness_Of_Wall/2);
+                                              Length_Of_Wall=Length_Of_Wall-Extra_Length;
+                                              
+                                              r1c = row.createCell(1);
+                                              r1c.setCellValue(Seprs.getString("GlobalId"));  
+                                              
+                                              r1c = row.createCell(2);
+                                              r1c.setCellValue(Seprs.getString("Name"));  
+                                              
+                                              r1c = row.createCell(3);
+                                              r1c.setCellValue(Val);
+                                              
+                                              r1c = row.createCell(4);
+                                              r1c.setCellValue(Seprs.getFloat("Height"));   
+                                              
+                                              r1c = row.createCell(5);
+                                              r1c.setCellValue(Length_Of_Wall); 
+                                              
+                                              r1c = row.createCell(6);
+                                              r1c.setCellValue(Thickness_Of_Wall); 
+                                              
+                                              r1c = row.createCell(7);
+                                              r1c.setCellValue(Opening);
+                                              
+                                              r1c = row.createCell(8);
+                                              r1c.setCellValue(OpeningHeight);
+                                              
+                                             
+                                              
+                                                                        for(int x=0;x<jointwalls.size();x++)
+                                                                        {
+                                                                           c.getLengthOfWall(jointwalls.getElementAt(x), FileId);
+                                                                           ResultSet joinlenres=c.DqlStatement();
+                                                                           if(joinlenres.next()!=false)
+                                                                           {
+                                                                                Float Length_Of__Join_Wall=(joinlenres.getFloat("Length"))/1000;
+                                                                                
+                                                                                if((Length_Of__Join_Wall-0.095)<((Height_Of_Wall/1000)/5))
+                                                                                {
+                                                                                    IsFree=true;
+                                                                                }
+                                                                                
+                                                                                c.getOpeningsinWall(jointwalls.getElementAt(x), FileId);
+                                                                   try
+                                                                   {
+                                                                        ResultSet openress=c.DqlStatement();
+                                                                        if(openress.next()!=false)
+                                                                        {
+                                                                             int Openings=openress.getInt("Openings");
+                                                                            if(Openings>0)
+                                                                            {
+                                                                                
+                                                                                c.getBiggestOpeningWall(jointwalls.getElementAt(x), FileId);
+                                                                                ResultSet opensizeress=c.DqlStatement();
+                                                                                if(opensizeress.next()!=false)
+                                                                                {
+                                                                                    float OpenSizenew=opensizeress.getFloat("Height");
+                                                                                    
+                                                                                    if(OpenSizenew>(0.5*Height_Of_Wall))
+                                                                                    {
+                                                                                        totopening++;
+                                                                                    }
+                                                                                    
+                                                                                    if(OpenSizenew>OpenSize)
+                                                                                    {
+                                                                                        OpenSize=OpenSizenew;
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                   }
+                                                                   catch(Exception ex)
+                                                                   {
+                                                                       
+                                                                   }
+                                                                           }
+                                                                        }
+                                                                      if(totopening>=2)
+                                                                      {
+                                                                          isColumn=true;
                                                                       }
+                                                                      
+                                                                      
+                                                                      if(isColumn)
+                                                                      {
+                                                                           r1c = row.createCell(7);
+                                                                           r1c.setCellValue(totopening);
+                                              
+                                                                           r1c = row.createCell(8);
+                                                                           r1c.setCellValue(OpenSize);
+                                                                           
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("No Support. Selenderness is governed by Element's Height");
+                                                                      }
+                                                                      else if(totopening==1)
+                                                                      {
+                                                                           r1c = row.createCell(7);
+                                                                           r1c.setCellValue(totopening);
+                                              
+                                                                           r1c = row.createCell(8);
+                                                                           r1c.setCellValue(OpenSize);
+                                                                           
+                                                                          if(counter==1 && crossJoins.size()>=1)
+                                                                          {
+                                                                            Double Effective_Length=1.5*Length_Of_Wall;
+                                                                            
+                                                                             
+                                                        
+                                                                            r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("1.5*L"); 
+                                                                          }
+                                                                          if(counter==0 && crossJoins.size()>=1)
+                                                                          {
+                                                                            Float Effective_Length=2*Length_Of_Wall;
+                                                                            
+                                                                             
+                                                        
+                                                                            r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("2*L"); 
+                                                                          }
+                                                                      }
+                                                                      else
+                                                                      {
+                                                                            if (counter==0 && crossJoins.size()==1 && jointwalls.size()==1)
+                                                                      {
+                                                                          IsFree=true;
+                                                                      }
+                                                                      if(IsFree)
+                                                                      {
+                                                                         
+                                                                          if(counter==1 && crossJoins.size()>=1)
+                                                                          {
+                                                                            Double Effective_Length=1.5*Length_Of_Wall;
+                                                                            
+                                                                             
+                                                        
+                                                                            r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("1.5*L"); 
+                                                                          }
+                                                                          
+                                                                          else if(counter==0 && crossJoins.size()>=1)
+                                                                          {
+                                                                            Float Effective_Length=2*Length_Of_Wall;
+                                                                            
+                                                                            r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("2*L");
+                                                                          }
+                                                                      }
+                                                                      else
+                                                                      {
+                                                                      if(counter==0 && crossJoins.size()>=2)
+                                                                      {
+                                                                          Float Effective_Length=1*Length_Of_Wall;
+                                                                          
+                                                                          r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("1*L");
+                                                                      }
+                                                                      else if(counter==1 && crossJoins.size()>=1)
+                                                                      {
+                                                                          Double Effective_Length=0.9*Length_Of_Wall;
+                                                                          r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("0.9*L");
+                                                                      }
+                                                                      else if(counter>=2 && crossJoins.size()>=1)
+                                                                      {
+                                                                          Double Effective_Length=0.8*Length_Of_Wall;
+                                                                          r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("0.8*L");
+                                                                      }
+                                                                      else if (counter==0 && crossJoins.size()==0 && jointwalls.size()==0)
+                                                                      {
+                                                                          r1c = row.createCell(10);
+                                                                            r1c.setCellValue("No Support on Either Side, Selenderness governed by Height");
+                                                                      }
+                                                                      }
+                                                                      }
+                                                                      }
+                                                                              
+                                                                      
                                                                   }
                                                               }
                                                               else
-                                                          {
-                                              if(counter==0)
-                                              {
-                                                  Float EffectiveLength=Length_Of_Wall;
-                                              }
-                                              else if(counter==1)
-                                              {
-                                                  Double Effective_Length=0.9*Length_Of_Wall;
-                                              }
-                                              else
-                                              {
-                                                  Double Effective_Length=0.8*Length_Of_Wall;
-                                              }
-                                                          }
+                                                              {
+                                                                      boolean IsFree=false;
+                                              XSSFRow row = sheet.createRow(rowcount);
+                                              rowcount++;
+                                              
+                                              
+                                              XSSFCell r1c = row.createCell(0);
+                                              r1c.setCellValue("Wall");
+                                              Float Length_Of_Wall=lenres.getFloat("Length");
+                                              Float Thickness_Of_Wall=Seprs.getFloat("Thickness");
+                                              
+                                              Float Extra_Length=crossJoins.size()*(Thickness_Of_Wall/2);
+                                              Length_Of_Wall=Length_Of_Wall-Extra_Length;
+                                              
+                                              r1c = row.createCell(1);
+                                              r1c.setCellValue(Seprs.getString("GlobalId"));  
+                                              
+                                              r1c = row.createCell(2);
+                                              r1c.setCellValue(Seprs.getString("Name"));  
+                                              
+                                              r1c = row.createCell(3);
+                                              r1c.setCellValue(Val);
+                                              
+                                              r1c = row.createCell(4);
+                                              r1c.setCellValue(Seprs.getFloat("Height"));   
+                                              
+                                              r1c = row.createCell(5);
+                                              r1c.setCellValue(Length_Of_Wall); 
+                                              
+                                              r1c = row.createCell(6);
+                                              r1c.setCellValue(Thickness_Of_Wall); 
+                                              
+                                              r1c = row.createCell(7);
+                                              r1c.setCellValue(Opening);
+                                              
+                                              
+                                              
+                                           
+                                              
+                                                                      Float Height_Of_Wall=Seprs.getFloat("Height");
+                                                                      for(int x=0;x<jointwalls.size();x++)
+                                                                      {
+                                                                           c.getLengthOfWall(jointwalls.elementAt(x), FileId);
+                                                                           ResultSet joinlenres=c.DqlStatement();
+                                                                           if(joinlenres.next()!=false)
+                                                                           {
+                                                                                Float Length_Of__Join_Wall=(joinlenres.getFloat("Length"))/1000;
+                                                                                
+                                                                                if((Length_Of__Join_Wall-0.095)<((Height_Of_Wall/1000)/6))
+                                                                                {
+                                                                                    IsFree=true;
+                                                                                }
+                                                                                
+                                                                                 c.getOpeningsinWall(jointwalls.getElementAt(x), FileId);
+                                                                   try
+                                                                   {
+                                                                        ResultSet openress=c.DqlStatement();
+                                                                        if(openress.next()!=false)
+                                                                        {
+                                                                             int Openings=openress.getInt("Openings");
+                                                                            if(Openings>0)
+                                                                            {
+                                                                                
+                                                                                c.getBiggestOpeningWall(jointwalls.getElementAt(x), FileId);
+                                                                                ResultSet opensizeress=c.DqlStatement();
+                                                                                if(opensizeress.next()!=false)
+                                                                                {
+                                                                                    float OpenSizenew=opensizeress.getFloat("Height");
+                                                                                    
+                                                                                    if(OpenSizenew>(0.5*Height_Of_Wall))
+                                                                                    {
+                                                                                        totopening++;
+                                                                                    }
+                                                                                    
+                                                                                    if(OpenSizenew>OpenSize)
+                                                                                    {
+                                                                                        OpenSize=OpenSizenew;
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                   }
+                                                                   catch(Exception ex)
+                                                                   {
+                                                                       
+                                                                   }
+                                                                           }
+                                                                      }
+                                                                       if(totopening>=2)
+                                                                      {
+                                                                          isColumn=true;
+                                                                      }
+                                                                      
+                                                                      
+                                                                      if(isColumn)
+                                                                      {
+                                                                           r1c = row.createCell(7);
+                                                                           r1c.setCellValue(totopening);
+                                              
+                                                                           r1c = row.createCell(8);
+                                                                           r1c.setCellValue(OpenSize);
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("No Support. Selenderness is governed by Element's Height");
+                                                                      }
+                                                                      else if(totopening==1)
+                                                                      {
+                                                                          if(counter==1 && crossJoins.size()>=1)
+                                                                          {
+                                                                            Double Effective_Length=1.5*Length_Of_Wall;
+                                                                            
+                                                                             
+                                                        
+                                                                            r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("1.5*L"); 
+                                                                          }
+                                                                          if(counter==0 && crossJoins.size()>=1)
+                                                                          {
+                                                                            Float Effective_Length=2*Length_Of_Wall;
+                                                                            
+                                                                             
+                                                        
+                                                                            r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("2*L"); 
+                                                                          }
+                                                                      }
+                                                                      else
+                                                                      {
+                                                                      if (counter==0 && crossJoins.size()==1 && jointwalls.size()==1)
+                                                                      {
+                                                                          IsFree=true;
+                                                                      }
+                                                                      if (counter==1 && crossJoins.size()==0 && jointwalls.size()==1)
+                                                                      {
+                                                                          IsFree=true;
+                                                                      }
+                                                                      if(IsFree)
+                                                                      {
+                                                                            
+                                                                          if(counter==1 && crossJoins.size()>=0)
+                                                                          {
+                                                                            Double Effective_Length=1.5*Length_Of_Wall;
+                                                                            
+                                                                             
+                                                        
+                                                                            r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("1.5*L"); 
+                                                                          }
+                                                                          
+                                                                          else if(counter==0 && crossJoins.size()>=1)
+                                                                          {
+                                                                            Float Effective_Length=2*Length_Of_Wall;
+                                                                            
+                                                                            r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("2*L");
+                                                                          }
+                                                                      }
+                                                                      else
+                                                                      {
+                                                                          if(counter==0 && crossJoins.size()>=2)
+                                                                      {
+                                                                          Float Effective_Length=1*Length_Of_Wall;
+                                                                          
+                                                                          r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("1*L");
+                                                                      }
+                                                                      else if(counter==1 && crossJoins.size()>=1)
+                                                                      {
+                                                                          Double Effective_Length=0.9*Length_Of_Wall;
+                                                                          
+                                                                          r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("0.9*L");
+                                                                      }
+                                                                      else if(counter>=2 && crossJoins.size()>=1)
+                                                                      {
+                                                                          Double Effective_Length=0.8*Length_Of_Wall;
+                                                                          r1c = row.createCell(9);
+                                                                            r1c.setCellValue(Effective_Length); 
+                                                        
+                                                                            r1c = row.createCell(10);
+                                                                            r1c.setCellValue("0.8*L");
+                                                                      }
+                                                                      
+                                                                      else if (counter==0 && crossJoins.size()==0 && jointwalls.size()==0)
+                                                                      {
+                                                                          r1c = row.createCell(10);
+                                                                            r1c.setCellValue("No Support. Selenderness is governed by Element's Height");
+                                                                      }
+                                                                          
+                                                                    
+                                                                          
+                                                                      }
+                                                                      }
+                                                              }
                                                           }
                                                           
                                             
                                           }
-                                         singlelinewalls = new DefaultListModel<String>();
+                                           singlelinewalls = new DefaultListModel<String>();
                                            jointwalls = new DefaultListModel<String>(); 
+                                           crossJoins= new DefaultListModel<String>(); 
+                                          
                                       }
                                   
-                              
+                              Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                                      Path path = FileSystems.getDefault().getPath("").toAbsolutePath();
+                                      File ouputfiles = new File(path+"\\IFC_Lenght_Validations.xlsx");
+                                      FileOutputStream out = new FileOutputStream(ouputfiles);
+                                      workbook.write(out);
+                                      out.close();
                           
                       }
                       }

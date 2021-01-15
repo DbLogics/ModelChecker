@@ -1094,7 +1094,7 @@ public void createShapeRepresentationMapping(long shaperepresentationhashno, Str
     
     public void getLengthOfWall(String GlobalId,String FileId)
     {
-        query="select (Max(cart.Xdim)-Min(cart.Xdim)) as 'Length' \n" +
+        query="select (Max(cart.Xdim)+ ABS(Min(cart.Xdim))) as 'Length' \n" +
 "from IFC_WallStandardCase as wall\n" +
 "join IFC_ProductDefinationShapeMapping as prodmap on wall.ProductDefinationShapeHashNo=prodmap.ProductDefinationShapeHashNo and prodmap.FKFileId=wall.FKFileId\n" +
 "join IFC_ShapeRepresentationMapping as shapemap on prodmap.ShapeRepresentationHashNo=shapemap.ShapeRepresentationHashNo and shapemap.FKFileId=wall.FKFileId\n" +
@@ -1120,13 +1120,14 @@ public void createShapeRepresentationMapping(long shaperepresentationhashno, Str
     }
 
     public void getBiggestOpeningWall(String GlobalId, String FileId) {
-        query="select Max(ext.Depth) as 'Height'\n" +
+        query="select Max(rect.Breath) as Height\n" +
 "from IFC_WallStandardCase as wall\n" +
 "join IFC_RelVoisElement as con on wall.HashNo=con.WallStandardCaseHashNo\n" +
 "join IFC_OpeningElement as opens on con.OpeningElementHashNo=opens.HashNo\n" +
 "join IFC_ProductDefinationShapeMapping as prodmap on opens.ProductDefinationShapeHashNo=prodmap.ProductDefinationShapeHashNo\n" +
 "join IFC_ShapeRepresentationMapping as shapemap on prodmap.ShapeRepresentationHashNo=shapemap.ShapeRepresentationHashNo\n" +
 "join IFC_ExtrudedAreaSolid as ext on shapemap.ForwardHashNo=ext.HashNo\n" +
+"join IFC_RectangleProfileDef as rect on ext.RectangleProfileDefHashNo=rect.HashNo\n" +
 "where wall.FKFileId="+FileId+" and wall.GlobalId='"+GlobalId+"'";
     }
     
@@ -1145,9 +1146,7 @@ public void createShapeRepresentationMapping(long shaperepresentationhashno, Str
 "left join IFC_Direction as dir1 on axis.Dir1HashNo=dir1.HashNo and dir1.FKFileId=sto.FKFileId\n" +
 "left join IFC_Direction as dir2 on axis.Dir2HashNo=dir2.HashNo and dir2.FKFileId=sto.FKFileId\n" +
 "where \n" +
-"cart.Ydim=(select incart.Ydim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId) \n" +
-"and cart.Zdim=(select incart.Zdim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId)\n" +
-"and dir1.Xdim=(select indir1.Xdim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir1 on inaxis.Dir1HashNo=indir1.HashNo and inwall.FKFileId=indir1.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
+"dir1.Xdim=(select indir1.Xdim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir1 on inaxis.Dir1HashNo=indir1.HashNo and inwall.FKFileId=indir1.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
 "and dir1.Ydim=(select indir1.Ydim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir1 on inaxis.Dir1HashNo=indir1.HashNo and inwall.FKFileId=indir1.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
 "and dir1.Zdim=(select indir1.Zdim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir1 on inaxis.Dir1HashNo=indir1.HashNo and inwall.FKFileId=indir1.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
 "and dir2.Xdim=(select indir2.Xdim from IFC_WallStandardCase as inwall join IFC_LocalPlacement as inlocalp on inwall.LocalPlacementHashNo=inlocalp.HashNo and inlocalp.FKFileId=inwall.FKFileId join IFC_Axis2Placement3D as inaxis on inlocalp.Axis2PlacementHashNo=inaxis.HashNo and inaxis.FKFileId=inwall.FKFileId join IFC_CartesianPoint as incart on inaxis.CartesianHashNo=incart.HashNo and incart.FKFileId=inaxis.FKFileId left join IFC_Direction as indir2 on inaxis.Dir2HashNo=indir2.HashNo and inwall.FKFileId=indir2.FKFileId where inwall.GlobalId=@GlobalId and inwall.FKFileId=sp.FKFileId )\n" +
