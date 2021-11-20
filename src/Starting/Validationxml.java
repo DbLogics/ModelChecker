@@ -24,11 +24,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.TableColumn;
-import luck.Connect;
-import luck.Luck10;
-import luck.Luck7;
-import luck.Luck8;
-import luck.Luck9;
+import Database_Connectivity.Connect;
+import IFC_XML_Code.Luck10;
+import IFC_XML_Code.Luck7;
+import IFC_XML_Code.Luck8;
+import IFC_XML_Code.Luck9;
 
 /**
  *

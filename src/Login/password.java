@@ -6,6 +6,7 @@
 package Login;
 
 import Starting.ChooseAnalysis;
+import Starting.MainDesktopIfc;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
@@ -138,7 +139,7 @@ public class password extends javax.swing.JFrame {
         {
             Preferences userPreferences = Preferences.userRoot();
             userPreferences.put("userid",Integer.toString(userid));
-            ChooseAnalysis ca=new ChooseAnalysis();
+            MainDesktopIfc ca=new MainDesktopIfc();
             ca.setVisible(true);
             this.setVisible(false);
         }

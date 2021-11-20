@@ -3,30 +3,30 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package Starting;
 
+import Database_Connectivity.Connect;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
-import java.awt.Toolkit;
 import java.io.File;
-import java.io.FileInputStream;
+
 import java.io.FileOutputStream;
-import java.io.OutputStream;
+
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
-import java.sql.Array;
+
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
-import java.util.List;
+import java.text.DecimalFormat;
 import java.util.Vector;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.DefaultListModel;
-import javax.swing.JInternalFrame;
+
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -34,88 +34,90 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.TableColumn;
-import luck.Connect;
+
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-
 /**
  *
  * @author DataByte Logics
  */
-
-
 public class Validation extends javax.swing.JInternalFrame {
 
     public class Item {
 
-    private Float Position;
-    private String Name;
+        private Float Position;
+        private String Name;
 
-    public Item(Float position, String name) {
-        this.Position = position;
-        this.Name = name;
-    }
+        public Item(Float position, String name) {
+            this.Position = position;
+            this.Name = name;
+        }
 
-    public Float getPosiFloat() {
-        return Position;
-    }
+        public Float getPosiFloat() {
+            return Position;
+        }
 
-    public void setPosition(Float position) {
-        this.Position = position;
-    }
+        public void setPosition(Float position) {
+            this.Position = position;
+        }
 
-    public String getName() {
-        return Name;
-    }
+        public String getName() {
+            return Name;
+        }
 
-    public void setName(String name) {
-        this.Name = name;
-    }
+        public void setName(String name) {
+            this.Name = name;
+        }
 
-    public String toString(){
-        return this.Name;
+        public String toString() {
+            return this.Name;
+        }
     }
-}
     /**
      * Creates new form Validation
      */
-    JList<Item> stories=new JList<Item>();
-    String FileId="";
-    String Path="";
+    JList<Item> stories = new JList<Item>();
+    String FileId = "";
+    String Path = "";
     ResultSet rs;
+    ResultSet grs;
     ResultSet Seprs;
+    ResultSet stiffening_res;
+    ResultSet heights_res;
+    ResultSet length_res;
+    ResultSet thickness_res;
     ResultSetMetaData mt;
-    Structural_Analysis.Connect c=new Structural_Analysis.Connect();
-    DefaultListModel<Item>  listModel = new DefaultListModel<Item>();
-    DefaultListModel<String>  singlelinewalls = new DefaultListModel<String>();
-    DefaultListModel<String>  jointwalls = new DefaultListModel<String>();
-DefaultListModel<String> crossJoins=new DefaultListModel<String>();
+    Database_Connectivity.Connect c = new Database_Connectivity.Connect();
+    DefaultListModel<Item> listModel = new DefaultListModel<Item>();
+    DefaultListModel<String> singlelinewalls = new DefaultListModel<String>();
+    DefaultListModel<String> jointwalls = new DefaultListModel<String>();
+    DefaultListModel<String> crossJoins = new DefaultListModel<String>();
+    Float Required_Length_Of__Join_Wall=0.0f;
+    boolean handle_special=false;
+    private static final DecimalFormat df = new DecimalFormat("0.00");
+
+
     public Validation() {
         initComponents();
-        getContentPane().setBackground(new Color(197,226,252));
+        getContentPane().setBackground(new Color(197, 226, 252));
         Preferences userPreferences = Preferences.userRoot();
-        FileId = userPreferences.get("fileid","0");      
+        FileId = userPreferences.get("fileid", "0");
         c.getStorey(FileId);
-        try
-        {
-        rs=c.DqlStatement();
-       
-                while(rs.next()!=false)
-                        {
-                           listModel.addElement(new Item(rs.getFloat("Position"), rs.getString("LevelName")));
-                            drpStorey.addItem(rs.getString("LevelName"));
-                        }
-                stories = new JList(listModel);
-                 String g="";
-            
-      
-        }
-        catch(Exception ex)
-        {
-             String g="";
+        try {
+            rs = c.DqlStatement();
+
+            while (rs.next() != false) {
+                listModel.addElement(new Item(rs.getFloat("Position"), rs.getString("LevelName")));
+                drpStorey.addItem(rs.getString("LevelName"));
+            }
+            stories = new JList(listModel);
+            String g = "";
+
+        } catch (Exception ex) {
+            String g = "";
         }
     }
 
@@ -244,1036 +246,2286 @@ DefaultListModel<String> crossJoins=new DefaultListModel<String>();
     }// </editor-fold>//GEN-END:initComponents
 
     private void drpCheckItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_drpCheckItemStateChanged
-        if(drpCheck.getSelectedIndex()==0)
-        {
+        if (drpCheck.getSelectedIndex() == 0) {
             status.setText("Status : Check not Selected");
-        }
-        else
-        {
-            if(drpStorey.getSelectedIndex()==0)
-            {
+        } else {
+            if (drpStorey.getSelectedIndex() == 0) {
                 status.setText("Status : Storey not Selected");
-            }
-            else
-            {
+            } else {
                 status.setText("Status : Press Validate Button to proceed");
             }
-             
+
         }
     }//GEN-LAST:event_drpCheckItemStateChanged
 
     private void validatebuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_validatebuttonActionPerformed
-       validatebutton.setEnabled(false);
-       try
-       {
-        if(drpCheck.getSelectedIndex()==1)
-        {
-            
-		XSSFWorkbook workbook = new XSSFWorkbook ();
-		XSSFSheet sheet = workbook.createSheet();
-                
-                //Create First Row
-		XSSFRow row1 = sheet.createRow(0);
-		XSSFCell r1c1 = row1.createCell(0);
-		r1c1.setCellValue("Entity");
-		XSSFCell r1c2 = row1.createCell(1);
-		r1c2.setCellValue("GlobalId");
-                XSSFCell r1c12 = row1.createCell(2);
-		r1c12.setCellValue("Name");
-		XSSFCell r1c3 = row1.createCell(3);
-		r1c3.setCellValue("Storey");
-                XSSFCell r1c4 = row1.createCell(4);
-		r1c4.setCellValue("Height");
-                XSSFCell r1c5 = row1.createCell(5);
-		r1c5.setCellValue("Length");
-                XSSFCell r1c6 = row1.createCell(6);
-		r1c6.setCellValue("Thickness");
-                XSSFCell r1c7 = row1.createCell(7);
-		r1c7.setCellValue("No. Of Openings");
-                XSSFCell r1c8 = row1.createCell(8);
-		r1c8.setCellValue("Height of Biggest Opening");
-                XSSFCell r1c9 = row1.createCell(9);
-		r1c9.setCellValue("Calculated Height");
-                XSSFCell r1c10 = row1.createCell(10);
-		r1c10.setCellValue("Effective Height");
-                XSSFCell r1c11 = row1.createCell(11);
-		r1c11.setCellValue("Formula");
-                
-                   try {
-                      for(int i=0;i<listModel.size();i++)
-                      {
-                           //Create First Row
-                          
-                          
-                          Item item=listModel.getElementAt(i);
-                          String Val=(String)drpStorey.getSelectedItem();
-                          String DVal=item.getName();
-                          if(DVal.equals(Val))
-                          {
-                              c.getLowerSlab(item.getPosiFloat(),FileId);
-                              rs=c.DqlStatement();
-                              if(rs.next()!=false)
-                              {
-                                  
-                                  Float Lower_Slab_Thickness=rs.getFloat("Depth");
-                                  
-                                  c.getUpperSlab(item.getPosiFloat(),FileId);
-                                  rs=c.DqlStatement();
-                                  
-                                  if(rs.next()!=false)
-                                  {
-                                      Float Upper_Slab_Thickness=rs.getFloat("Depth");
-                                      
-                                      c.getWalls(item.getPosiFloat(),FileId);
-                                      Seprs=c.DqlStatement();
-                                      int rowcount=1;
-                                      while(Seprs.next()!=false)
-                                      {
-                                          XSSFRow row = sheet.createRow(rowcount);
-                                          
-                                          XSSFCell r1c = row.createCell(0);
-                                          r1c.setCellValue("Wall");
-                                          Float Start=0.0f;
-                                          c.getLengthOfWall(Seprs.getString("GlobalId"), FileId);
-                                          ResultSet lenres=c.DqlStatement();
-                                          if(lenres.next()!=false)
-                                          {
-                                              Float Length_Of_Wall=lenres.getFloat("Length");
-                                              Float Thickness_Of_Wall=Seprs.getFloat("Thickness");
-                                              
-                                              r1c = row.createCell(1);
-                                              r1c.setCellValue(Seprs.getString("GlobalId"));  
-                                              
-                                              r1c = row.createCell(2);
-                                              r1c.setCellValue(Seprs.getString("Name"));  
-                                              
-                                              r1c = row.createCell(3);
-                                              r1c.setCellValue(Val);
-                                              
-                                              r1c = row.createCell(4);
-                                              r1c.setCellValue(Seprs.getFloat("Height"));   
-                                              
-                                              r1c = row.createCell(5);
-                                              r1c.setCellValue(Length_Of_Wall); 
-                                              
-                                              r1c = row.createCell(6);
-                                              r1c.setCellValue(Thickness_Of_Wall); 
-                                               
-                                              if(Length_Of_Wall>(4*Thickness_Of_Wall))
-                                              {
-                                                      if(Float.compare(item.getPosiFloat(),Start)==0)
-                                                      {
-                                                        Float Height=(Lower_Slab_Thickness/1000)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
-                                                        Double Effective_Height=0.75*Height;
-                                                        
-                                                        r1c = row.createCell(9);
-                                                        r1c.setCellValue(Height); 
-                                                        
-                                                        r1c = row.createCell(10);
-                                                        r1c.setCellValue(Effective_Height); 
-                                                        
-                                                        r1c = row.createCell(11);
-                                                        r1c.setCellValue("0.75*H"); 
-                                                      }
-                                                      else
-                                                      {
-                                                        Float Height=((Lower_Slab_Thickness/1000)/2)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
-                                                        Double Effective_Height=0.75*Height;   
-                                                        
-                                                        r1c = row.createCell(9);
-                                                        r1c.setCellValue(Height); 
-                                                        
-                                                        r1c = row.createCell(10);
-                                                        r1c.setCellValue(Effective_Height); 
-                                                        
-                                                        r1c = row.createCell(11);
-                                                        r1c.setCellValue("0.75*H"); 
-                                                      }      
-                                              }
-                                              else
-                                              {
-                                                  c.getJointsOfWall(Seprs.getString("GlobalId"), FileId);
-                                                  ResultSet joinres=c.DqlStatement();
-                                                  if(joinres.next()!=false)
-                                                  {
-                                                      int Joints=joinres.getInt("Joints");
-                                                      if(Joints>0)
-                                                      {
-                                                          String GlobalId=Seprs.getString("GlobalId"); 
-                                                          
-                                                          boolean IsColumn=false;
-                                                          float OpenSize=0.0f;
-                                                          
-                                                          c.getConnectedWalls(Seprs.getString("GlobalId"),item.getPosiFloat(),FileId);
-                                                          ResultSet connectedwallres=c.DqlStatement();
-                                                          while(connectedwallres.next()!=false)
-                                                          {
-                                                            jointwalls.addElement(connectedwallres.getString("GlobalId"));
-                                                          }
-                                                          int totopening=0;
-                                                          if(jointwalls.size()>=2)
-                                                          {
-                                                              
-                                                              for(int y=0;y<jointwalls.size();y++)
-                                                              {
-                                                                   c.getOpeningsinWall(jointwalls.getElementAt(y), FileId);
-                                                                   try
-                                                                   {
-                                                                        ResultSet openres=c.DqlStatement();
-                                                                        if(openres.next()!=false)
-                                                                        {
-                                                                             int Opening=openres.getInt("Openings");
-                                                                            if(Opening>0)
-                                                                            {
-                                                                                totopening++;
-                                                                                c.getBiggestOpeningWall(jointwalls.getElementAt(y), FileId);
-                                                                                ResultSet opensizeres=c.DqlStatement();
-                                                                                if(opensizeres.next()!=false)
-                                                                                {
-                                                                                    float OpenSizenew=opensizeres.getFloat("Height");
-                                                                                    if(OpenSizenew>OpenSize)
-                                                                                    {
-                                                                                        OpenSize=OpenSizenew;
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                   }
-                                                                   catch(Exception ex)
-                                                                   {
-                                                                       
-                                                                   }
-                                                          }
-                                                              if(totopening>1)
-                                                              {
-                                                                  IsColumn=true;
-                                                              }
-                                                          }
-                                                         
-                                                              
-                                                                  if(IsColumn)
-                                                                  {
-                                                                      
-                                                                            r1c = row.createCell(7);
-                                                                            r1c.setCellValue(totopening);
-                                                                            
-                                                                            r1c = row.createCell(8);
-                                                                            r1c.setCellValue(OpenSize); 
-                                                                            
-                                                                       if(Float.compare(item.getPosiFloat(),Start)==0)
-                                                                        {
-                                                                            Float Height=(Lower_Slab_Thickness/1000)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
-                                                                            Double Effective_Height=(0.75*Height)+(0.25*(OpenSize/1000));
-                                                                            
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Height); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue(Effective_Height); 
-                                                        
-                                                                            r1c = row.createCell(11);
-                                                                            r1c.setCellValue("0.75*H + 0.25*H1"); 
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            Float Height=((Lower_Slab_Thickness/1000)/2)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
-                                                                            Double Effective_Height=0.75*Height+(0.25*(OpenSize/1000)); 
-                                                                            
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Height); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue(Effective_Height); 
-                                                        
-                                                                            r1c = row.createCell(11);
-                                                                            r1c.setCellValue("0.75*H + 0.25*H1"); 
-                                                                        }
-                                                                  }
-                                                                  else
-                                                                  {
-                                                                      if(Float.compare(item.getPosiFloat(),Start)==0)
-                                                          {
-                                                            Float Height=(Lower_Slab_Thickness/1000)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
-                                                            Double Effective_Height=0.75*Height;
- 
-                                                            
-                                                             r1c = row.createCell(9);
-                                                             r1c.setCellValue(Height); 
-                                                        
-                                                             r1c = row.createCell(10);
-                                                             r1c.setCellValue(Effective_Height); 
-                                                        
-                                                             r1c = row.createCell(11);
-                                                             r1c.setCellValue("0.75*H"); 
-                                                          }
-                                                          else
-                                                          {
-                                                            Float Height=((Lower_Slab_Thickness/1000)/2)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
-                                                            Double Effective_Height=0.75*Height;     
-                                                            
-                                                            
-                                                            r1c = row.createCell(9);
-                                                             r1c.setCellValue(Height); 
-                                                        
-                                                             r1c = row.createCell(10);
-                                                             r1c.setCellValue(Effective_Height); 
-                                                        
-                                                             r1c = row.createCell(11);
-                                                             r1c.setCellValue("0.75*H"); 
-                                                          }
-                                                                  }
-                                                              
-                                                              
-                                                          
-                                                          
-                                                          
-                                                      }
-                                                      else
-                                                      {
-                                                           Float Height=(Lower_Slab_Thickness/1000)+(Seprs.getFloat("Height")/1000)+((Upper_Slab_Thickness/1000)/2);
-                                                                  Float Effective_Height=Height;
-                                                                  
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Height); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue(Effective_Height); 
-                                                        
-                                                                            r1c = row.createCell(11);
-                                                                            r1c.setCellValue("H"); 
-                                                      }
-                                                  }
-                                              }
-                                            
-                                          }
-                                            singlelinewalls = new DefaultListModel<String>();
-                                           jointwalls = new DefaultListModel<String>();
-                                           rowcount++;
-                                      }
-                                      Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                                      Path path = FileSystems.getDefault().getPath("").toAbsolutePath();
-                                      File ouputfiles = new File(path+"\\IFC_Height_Validations.xlsx");
-                                      FileOutputStream out = new FileOutputStream(ouputfiles);
-                                      workbook.write(out);
-                                      out.close();
-                                  }
-                              }
-                          }
-                      }
-                       status.setText("Status: Check Performed");
-                   } catch (Exception ex) {
-                       Logger.getLogger(MainWindowIfc.class.getName()).log(Level.SEVERE, null, ex);
-                   }
-        }
-        else if(drpCheck.getSelectedIndex()==2)
-        {
-                   try {
-                      for(int i=0;i<listModel.size();i++)
-                      {
-                          Item item=listModel.getElementAt(i);
-                          String Val=(String)drpStorey.getSelectedItem();
-                          String DVal=item.getName();
-                          if(DVal.equals(Val))
-                          {
-                              
-                XSSFWorkbook workbook = new XSSFWorkbook ();
-		XSSFSheet sheet = workbook.createSheet();
-                
-                //Create First Row
-		XSSFRow row1 = sheet.createRow(0);
-		XSSFCell r1c1 = row1.createCell(0);
-		r1c1.setCellValue("Entity");
-		XSSFCell r1c2 = row1.createCell(1);
-		r1c2.setCellValue("GlobalId");
-                XSSFCell r1c12 = row1.createCell(2);
-		r1c12.setCellValue("Name");
-		XSSFCell r1c3 = row1.createCell(3);
-		r1c3.setCellValue("Storey");
-                XSSFCell r1c4 = row1.createCell(4);
-		r1c4.setCellValue("Height");
-                XSSFCell r1c5 = row1.createCell(5);
-		r1c5.setCellValue("Length");
-                XSSFCell r1c6 = row1.createCell(6);
-		r1c6.setCellValue("Thickness");
-                XSSFCell r1c7 = row1.createCell(7);
-		r1c7.setCellValue("No. Of Openings");
-                XSSFCell r1c8 = row1.createCell(8);
-		r1c8.setCellValue("Height of Biggest Opening");
-                XSSFCell r1c10 = row1.createCell(9);
-		r1c10.setCellValue("Effective Length");
-                XSSFCell r1c11 = row1.createCell(10);
-		r1c11.setCellValue("Formula");
-                
-               
-                                      c.getWalls(item.getPosiFloat(),FileId);
-                                      Seprs=c.DqlStatement();
-                                      int rowcount=1;
-                                      while(Seprs.next()!=false)
-                                      {
-                                         
-
-                                          
-                                          Float Start=0.0f;
-                                          c.getLengthOfWall(Seprs.getString("GlobalId"), FileId);
-                                          ResultSet lenres=c.DqlStatement();
-                                          if(lenres.next()!=false)
-                                          {
-                                              
-                                              c.getSingleLineWalls(Seprs.getString("GlobalId"),item.getPosiFloat(),FileId);
-                                              ResultSet singlelinewallsres=c.DqlStatement();
-                                              while(singlelinewallsres.next()!=false)
-                                              {
-                                                  singlelinewalls.addElement(singlelinewallsres.getString("GlobalId"));
-                                              }
-                                              
-                                              c.getConnectedWalls(Seprs.getString("GlobalId"),item.getPosiFloat(),FileId);
-                                              ResultSet connectedwallres=c.DqlStatement();
-                                              while(connectedwallres.next()!=false)
-                                              {
-                                                  jointwalls.addElement(connectedwallres.getString("GlobalId"));
-                                              }
-                                              int counter=0;
-                                              
-                                              for(int j=0;j<singlelinewalls.size();j++)
-                                              {
-                                                  
-                                                 for(int k=0;k<jointwalls.size();k++)
-                                                {
-                                                  if(singlelinewalls.getElementAt(j).equals(jointwalls.getElementAt(k)))
-                                                  {
-                                                      counter++;
-                                                    
-                                                  }
-                                                 
-                                                }
-                                                
-                                              }
-                                              
-                                              for(int k=0;k<jointwalls.size();k++)
-                                                {
-                                                    boolean IsCrossJoin=true;
-                                                    for(int j=0;j<singlelinewalls.size();j++)
-                                              {
-                                                  if(singlelinewalls.getElementAt(j).equals(jointwalls.getElementAt(k)))
-                                                  {
-                                                     IsCrossJoin=false;
-                                                    
-                                                  }
-                                                  
-                                              }
-                                                    if(IsCrossJoin)
-                                                    {
-                                                        crossJoins.addElement(jointwalls.getElementAt(k));
-                                                    }
-                                                 
-                                                }
-                                              
-                                                                           
-                                               c.getOpeningsinWall(Seprs.getString("GlobalId"), FileId);
-                                               
-                                               int totopening=0;
-                                               boolean isColumn=false;
-                                               Float OpenSize=0.0f;
-                                                          ResultSet openres=c.DqlStatement();
-                                                          if(openres.next()!=false)
-                                                          {
-                                                              int Opening=openres.getInt("Openings");
-                                                              if(Opening>0)
-                                                              {
-                                                                            
-                                                                 c.getBiggestOpeningWall(Seprs.getString("GlobalId"), FileId);
-                                                                  ResultSet opensizeres=c.DqlStatement();
-                                                                  if(opensizeres.next()!=false)
-                                                                  {
-                                                                      Float OpeningHeight=opensizeres.getFloat("Height");
-                                                                      Float Height_Of_Wall=Seprs.getFloat("Height");
-                                                                      
-                                                                      
-                                                                            
-                                                                      boolean IsFree=false;
-                                                                      if(OpeningHeight>(0.5*Height_Of_Wall))
-                                                                      {
-                                                                        // r1c = row.createCell(10);
-                                                                         // r1c.setCellValue("Not Applicable");
-                                                                      }
-                                                                      else
-                                                                      {
-                                                                           XSSFRow row = sheet.createRow(rowcount);
-                                          rowcount++;
-                                              XSSFCell r1c = row.createCell(0);
-                                              r1c.setCellValue("Wall");
-                                              Float Length_Of_Wall=lenres.getFloat("Length");
-                                              
-                                              
-                                              Float Thickness_Of_Wall=Seprs.getFloat("Thickness");
-                                              
-                                              Float Extra_Length=crossJoins.size()*(Thickness_Of_Wall/2);
-                                              Length_Of_Wall=Length_Of_Wall-Extra_Length;
-                                              
-                                              r1c = row.createCell(1);
-                                              r1c.setCellValue(Seprs.getString("GlobalId"));  
-                                              
-                                              r1c = row.createCell(2);
-                                              r1c.setCellValue(Seprs.getString("Name"));  
-                                              
-                                              r1c = row.createCell(3);
-                                              r1c.setCellValue(Val);
-                                              
-                                              r1c = row.createCell(4);
-                                              r1c.setCellValue(Seprs.getFloat("Height"));   
-                                              
-                                              r1c = row.createCell(5);
-                                              r1c.setCellValue(Length_Of_Wall); 
-                                              
-                                              r1c = row.createCell(6);
-                                              r1c.setCellValue(Thickness_Of_Wall); 
-                                              
-                                              r1c = row.createCell(7);
-                                              r1c.setCellValue(Opening);
-                                              
-                                              r1c = row.createCell(8);
-                                              r1c.setCellValue(OpeningHeight);
-                                              
-                                             
-                                              
-                                                                        for(int x=0;x<jointwalls.size();x++)
-                                                                        {
-                                                                           c.getLengthOfWall(jointwalls.getElementAt(x), FileId);
-                                                                           ResultSet joinlenres=c.DqlStatement();
-                                                                           if(joinlenres.next()!=false)
-                                                                           {
-                                                                                Float Length_Of__Join_Wall=(joinlenres.getFloat("Length"))/1000;
-                                                                                Float Height_Of__Join_Wall=0.0f;
-                                                                                Float Thickness_Of__Join_Wall=0.0f;
-                                                                                if((Length_Of__Join_Wall-0.095)<((Height_Of_Wall/1000)/5))
-                                                                                {
-                                                                                    IsFree=true;
-                                                                                }
-                                                                                c.getWallDetails(jointwalls.getElementAt(x),FileId);
-                                                                                ResultSet wallDetailsres=c.DqlStatement();
-                                                                                if(wallDetailsres.next())
-                                                                                {
-                                                                                    Height_Of__Join_Wall=wallDetailsres.getFloat("Height");
-                                                                                    Thickness_Of__Join_Wall=wallDetailsres.getFloat("Thickness");
-                                                                                }
-                                                                                c.getOpeningsinWall(jointwalls.getElementAt(x), FileId);
-                                                                   try
-                                                                   {
-                                                                        ResultSet openress=c.DqlStatement();
-                                                                        if(openress.next()!=false)
-                                                                        {
-                                                                             int Openings=openress.getInt("Openings");
-                                                                            if(Openings>0)
-                                                                            {
-                                                                                
-                                                                                c.getBiggestOpeningWall(jointwalls.getElementAt(x), FileId);
-                                                                                ResultSet opensizeress=c.DqlStatement();
-                                                                                if(opensizeress.next()!=false)
-                                                                                {
-                                                                                    float OpenSizenew=opensizeress.getFloat("Height");
-                                                                                    
-                                                                                    if(OpenSizenew>(0.5*Height_Of__Join_Wall))
-                                                                                    {
-                                                                                        c.getOpeningDistancefromFace(jointwalls.getElementAt(x), FileId);
-                                                                                        ResultSet openDisres=c.DqlStatement();
-                                                                                        if(openDisres.next())
-                                                                                        {
-                                                                                            float Distance_FromFace=openDisres.getFloat("Distance");
-                                                                                            if(Distance_FromFace>(Height_Of__Join_Wall/8))
-                                                                                            {
-                                                                                                totopening++;
-                                                                                            }
-                                                                                        }
-                                                                                        
-                                                                                    }
-                                                                                    
-                                                                                    if(OpenSizenew>OpenSize)
-                                                                                    {
-                                                                                        OpenSize=OpenSizenew;
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                   }
-                                                                   catch(Exception ex)
-                                                                   {
-                                                                       
-                                                                   }
-                                                                           }
-                                                                        }
-                                                                      if(totopening>=2)
-                                                                      {
-                                                                          isColumn=true;
-                                                                      }
-                                                                      
-                                                                      
-                                                                      if(isColumn)
-                                                                      {
-                                                                           r1c = row.createCell(7);
-                                                                           r1c.setCellValue(totopening);
-                                              
-                                                                           r1c = row.createCell(8);
-                                                                           r1c.setCellValue(OpenSize);
-                                                                           
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("No Support. Selenderness is governed by Element's Height");
-                                                                      }
-                                                                      else if(totopening==1)
-                                                                      {
-                                                                           r1c = row.createCell(7);
-                                                                           r1c.setCellValue(totopening);
-                                              
-                                                                           r1c = row.createCell(8);
-                                                                           r1c.setCellValue(OpenSize);
-                                                                           
-                                                                          if(counter==1 && crossJoins.size()>=1)
-                                                                          {
-                                                                            Double Effective_Length=1.5*Length_Of_Wall;
-                                                                            
-                                                                             
-                                                        
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("1.5*L"); 
-                                                                          }
-                                                                          if(counter==0 && crossJoins.size()>=1)
-                                                                          {
-                                                                            Float Effective_Length=2*Length_Of_Wall;
-                                                                            
-                                                                             
-                                                        
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("2*L"); 
-                                                                          }
-                                                                      }
-                                                                      else
-                                                                      {
-                                                                            if (counter==0 && crossJoins.size()==1 && jointwalls.size()==1)
-                                                                      {
-                                                                          IsFree=true;
-                                                                      }
-                                                                      if(IsFree)
-                                                                      {
-                                                                         
-                                                                          if(counter==1 && crossJoins.size()>=1)
-                                                                          {
-                                                                            Double Effective_Length=1.5*Length_Of_Wall;
-                                                                            
-                                                                             
-                                                        
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("1.5*L"); 
-                                                                          }
-                                                                          
-                                                                          else if(counter==0 && crossJoins.size()>=1)
-                                                                          {
-                                                                            Float Effective_Length=2*Length_Of_Wall;
-                                                                            
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("2*L");
-                                                                          }
-                                                                      }
-                                                                      else
-                                                                      {
-                                                                      if(counter==0 && crossJoins.size()>=2)
-                                                                      {
-                                                                          Float Effective_Length=1*Length_Of_Wall;
-                                                                          
-                                                                          r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("1*L");
-                                                                      }
-                                                                      else if(counter==1 && crossJoins.size()>=1)
-                                                                      {
-                                                                          Double Effective_Length=0.9*Length_Of_Wall;
-                                                                          r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("0.9*L");
-                                                                      }
-                                                                      else if(counter>=2 && crossJoins.size()>=1)
-                                                                      {
-                                                                          Double Effective_Length=0.8*Length_Of_Wall;
-                                                                          r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("0.8*L");
-                                                                      }
-                                                                      else if (counter==0 && crossJoins.size()==0 && jointwalls.size()==0)
-                                                                      {
-                                                                          r1c = row.createCell(10);
-                                                                            r1c.setCellValue("No Support on Either Side, Selenderness governed by Height");
-                                                                      }
-                                                                      }
-                                                                      }
-                                                                      }
-                                                                              
-                                                                      
-                                                                  }
-                                                              }
-                                                              else
-                                                              {
-                                                                      boolean IsFree=false;
-                                              XSSFRow row = sheet.createRow(rowcount);
-                                              rowcount++;
-                                              
-                                              
-                                              XSSFCell r1c = row.createCell(0);
-                                              r1c.setCellValue("Wall");
-                                              Float Length_Of_Wall=lenres.getFloat("Length");
-                                              Float Thickness_Of_Wall=Seprs.getFloat("Thickness");
-                                              
-                                              Float Extra_Length=crossJoins.size()*(Thickness_Of_Wall/2);
-                                              Length_Of_Wall=Length_Of_Wall-Extra_Length;
-                                              
-                                              r1c = row.createCell(1);
-                                              r1c.setCellValue(Seprs.getString("GlobalId"));  
-                                              
-                                              r1c = row.createCell(2);
-                                              r1c.setCellValue(Seprs.getString("Name"));  
-                                              
-                                              r1c = row.createCell(3);
-                                              r1c.setCellValue(Val);
-                                              
-                                              r1c = row.createCell(4);
-                                              r1c.setCellValue(Seprs.getFloat("Height"));   
-                                              
-                                              r1c = row.createCell(5);
-                                              r1c.setCellValue(Length_Of_Wall); 
-                                              
-                                              r1c = row.createCell(6);
-                                              r1c.setCellValue(Thickness_Of_Wall); 
-                                              
-                                              r1c = row.createCell(7);
-                                              r1c.setCellValue(Opening);
-                                              
-                                              
-                                              
-                                           
-                                              
-                                                                      Float Height_Of_Wall=Seprs.getFloat("Height");
-                                                                      for(int x=0;x<jointwalls.size();x++)
-                                                                      {
-                                                                           c.getLengthOfWall(jointwalls.elementAt(x), FileId);
-                                                                           ResultSet joinlenres=c.DqlStatement();
-                                                                           if(joinlenres.next()!=false)
-                                                                           {
-                                                                                Float Length_Of__Join_Wall=(joinlenres.getFloat("Length"))/1000;
-                                                                                
-                                                                                if((Length_Of__Join_Wall-0.095)<((Height_Of_Wall/1000)/6))
-                                                                                {
-                                                                                    IsFree=true;
-                                                                                }
-                                                                                
-                                                                                 c.getOpeningsinWall(jointwalls.getElementAt(x), FileId);
-                                                                   try
-                                                                   {
-                                                                        ResultSet openress=c.DqlStatement();
-                                                                        if(openress.next()!=false)
-                                                                        {
-                                                                             int Openings=openress.getInt("Openings");
-                                                                            if(Openings>0)
-                                                                            {
-                                                                                
-                                                                                Float Height_Of__Join_Wall=0.0f;
-                                                                                Float Thickness_Of__Join_Wall=0.0f;
-                                                                                  c.getWallDetails(jointwalls.getElementAt(x),FileId);
-                                                                                ResultSet wallDetailsres=c.DqlStatement();
-                                                                                
-                                                                                
-                                                                                if(wallDetailsres.next())
-                                                                                {
-                                                                                    Height_Of__Join_Wall=wallDetailsres.getFloat("Height");
-                                                                                    Thickness_Of__Join_Wall=wallDetailsres.getFloat("Thickness");
-                                                                                }
-                                                                                c.getBiggestOpeningWall(jointwalls.getElementAt(x), FileId);
-                                                                                ResultSet opensizeress=c.DqlStatement();
-                                                                                if(opensizeress.next()!=false)
-                                                                                {
-                                                                                    float OpenSizenew=opensizeress.getFloat("Height");
-                                                                                    
-                                                                                    if(OpenSizenew>(0.5*Height_Of__Join_Wall))
-                                                                                    {
-                                                                                      c.getOpeningDistancefromFace(jointwalls.getElementAt(x), FileId);
-                                                                                        ResultSet openDisres=c.DqlStatement();
-                                                                                        if(openDisres.next())
-                                                                                        {
-                                                                                            float Distance_FromFace=openDisres.getFloat("Distance");
-                                                                                            if(Distance_FromFace>(Height_Of__Join_Wall/8))
-                                                                                            {
-                                                                                                totopening++;
-                                                                                            }
-                                                                                        }
-                                                                                    }
-                                                                                    
-                                                                                    if(OpenSizenew>OpenSize)
-                                                                                    {
-                                                                                        OpenSize=OpenSizenew;
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                   }
-                                                                   catch(Exception ex)
-                                                                   {
-                                                                       
-                                                                   }
-                                                                           }
-                                                                      }
-                                                                       if(totopening>=2)
-                                                                      {
-                                                                          isColumn=true;
-                                                                      }
-                                                                      
-                                                                      
-                                                                      if(isColumn)
-                                                                      {
-                                                                           r1c = row.createCell(7);
-                                                                           r1c.setCellValue(totopening);
-                                              
-                                                                           r1c = row.createCell(8);
-                                                                           r1c.setCellValue(OpenSize);
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("No Support. Selenderness is governed by Element's Height");
-                                                                      }
-                                                                      else if(totopening==1)
-                                                                      {
-                                                                          if(counter==1 && crossJoins.size()>=1)
-                                                                          {
-                                                                            Double Effective_Length=1.5*Length_Of_Wall;
-                                                                            
-                                                                             
-                                                        
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("1.5*L"); 
-                                                                          }
-                                                                          if(counter==0 && crossJoins.size()>=1)
-                                                                          {
-                                                                            Float Effective_Length=2*Length_Of_Wall;
-                                                                            
-                                                                             
-                                                        
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("2*L"); 
-                                                                          }
-                                                                      }
-                                                                      else
-                                                                      {
-                                                                      if (counter==0 && crossJoins.size()==1 && jointwalls.size()==1)
-                                                                      {
-                                                                          IsFree=true;
-                                                                      }
-                                                                      if (counter==1 && crossJoins.size()==0 && jointwalls.size()==1)
-                                                                      {
-                                                                          IsFree=true;
-                                                                      }
-                                                                      if(IsFree)
-                                                                      {
-                                                                            
-                                                                          if(counter==1 && crossJoins.size()>=0)
-                                                                          {
-                                                                            Double Effective_Length=1.5*Length_Of_Wall;
-                                                                            
-                                                                             
-                                                        
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("1.5*L"); 
-                                                                          }
-                                                                          
-                                                                          else if(counter==0 && crossJoins.size()>=1)
-                                                                          {
-                                                                            Float Effective_Length=2*Length_Of_Wall;
-                                                                            
-                                                                            r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("2*L");
-                                                                          }
-                                                                      }
-                                                                      else
-                                                                      {
-                                                                          if(counter==0 && crossJoins.size()>=2)
-                                                                      {
-                                                                          Float Effective_Length=1*Length_Of_Wall;
-                                                                          
-                                                                          r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("1*L");
-                                                                      }
-                                                                      else if(counter==1 && crossJoins.size()>=1)
-                                                                      {
-                                                                          Double Effective_Length=0.9*Length_Of_Wall;
-                                                                          
-                                                                          r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("0.9*L");
-                                                                      }
-                                                                      else if(counter>=2 && crossJoins.size()>=1)
-                                                                      {
-                                                                          Double Effective_Length=0.8*Length_Of_Wall;
-                                                                          r1c = row.createCell(9);
-                                                                            r1c.setCellValue(Effective_Length); 
-                                                        
-                                                                            r1c = row.createCell(10);
-                                                                            r1c.setCellValue("0.8*L");
-                                                                      }
-                                                                      
-                                                                      else if (counter==0 && crossJoins.size()==0 && jointwalls.size()==0)
-                                                                      {
-                                                                          r1c = row.createCell(10);
-                                                                            r1c.setCellValue("No Support. Selenderness is governed by Element's Height");
-                                                                      }
-                                                                          
-                                                                    
-                                                                          
-                                                                      }
-                                                                      }
-                                                              }
-                                                          }
-                                                          
-                                            
-                                          }
-                                           singlelinewalls = new DefaultListModel<String>();
-                                           jointwalls = new DefaultListModel<String>(); 
-                                           crossJoins= new DefaultListModel<String>(); 
-                                          
-                                      }
-                                  
-                              Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                                      Path path = FileSystems.getDefault().getPath("").toAbsolutePath();
-                                      File ouputfiles = new File(path+"\\IFC_Lenght_Validations.xlsx");
-                                      FileOutputStream out = new FileOutputStream(ouputfiles);
-                                      workbook.write(out);
-                                      out.close();
-                          
-                      }
-                      }
-                       status.setText("Status: Check Performed");
-                   } catch (Exception ex) {
-                       System.out.println(ex.toString());
-                       Logger.getLogger(MainWindowIfc.class.getName()).log(Level.SEVERE, null, ex);
-                   }
-        }
-        else if (drpCheck.getSelectedIndex()==3)
-        {
-                  
-        }
-        else if(drpCheck.getSelectedIndex()==4)
-        {
-                  
-        }
-       }
-       catch(Exception ex)
-       {
-           Logger.getLogger(MainWindowIfc.class.getName()).log(Level.SEVERE, null, ex);
-       }
-       JTable tab;
-	JScrollPane sp;
-	Vector content = new Vector();
-	Vector header = new Vector();
-       
-	JPanel p1;
-	JLabel l1;
-         p1 = new JPanel();
-         p1.setBounds(0,150,100,100);
-		p1.setLayout(null);
-                p1.setBackground(Color.LIGHT_GRAY);
-		p1.setSize(800,400);
-		l1 = new JLabel("Validation Summary");
-		l1.setBounds(300,10, 200, 20);
-		l1.setFont(new Font("Comic Sans Ms",Font.BOLD,14));
-                //l1.setForeground(Color.WHITE);
-		p1.add(l1);
-                Connect c=new Connect();
-                c.getReport();
+        validatebutton.setEnabled(false);
         try {
-            rs=c.DqlStatement();
-            mt=rs.getMetaData();
-            
-            int count = mt.getColumnCount();
-			for (int i = 1; i <= count; i++)
-			{
-				header.addElement(mt.getColumnName(i));
-			}
-				while (rs.next())
-				{
-					Vector row = new Vector(count);
-					for (int i = 1; i <= count; i++)
-					{
-						row.addElement(rs.getObject(i));
-					}
-					content.addElement(row);
-				}
-                                
-                                tab = new JTable(content,header);
-		tab.setBackground(Color.BLUE);
-		tab.setColumnSelectionAllowed(false);
-		tab.setAutoscrolls(true);
-		tab.setGridColor(Color.BLUE);
-		tab.setFont(new Font("Monotype Corsiva", Font.PLAIN,12));
-		tab.setForeground(Color.WHITE);
-		
+            if (drpCheck.getSelectedIndex() == 1) {
 
-		tab.setCursor(Cursor.getSystemCustomCursor("TEXT_CURSOR"));
-                tab.enable(false);
-		TableColumn col;
-		for (int i = 0; i < tab.getColumnCount(); i++)
-		{
-			col = tab.getColumnModel().getColumn(i);
-                        col.sizeWidthToFit();
-                        
-		}
-		sp = new JScrollPane(tab);
-		
-		sp.setBounds(200,50,350,170);
-		
-		sp.setAutoscrolls(true);
-		sp.setVisible(true);
-		p1.add(sp);
-		this.add(p1);
-		p1.setBackground(new Color(204,204,204));
-		this.setVisible(true);
-        }
-        catch(Exception ex)
-        {
+                XSSFWorkbook workbook = new XSSFWorkbook();
+                XSSFSheet sheet = workbook.createSheet();
+
+                //Create First Row
+                XSSFRow row1 = sheet.createRow(0);
+                XSSFCell r1c1 = row1.createCell(0);
+                r1c1.setCellValue("Entity");
+                XSSFCell r1c2 = row1.createCell(1);
+                r1c2.setCellValue("GlobalId");
+                XSSFCell r1c12 = row1.createCell(2);
+                r1c12.setCellValue("Name");
+                XSSFCell r1c3 = row1.createCell(3);
+                r1c3.setCellValue("Storey");
+                XSSFCell r1c4 = row1.createCell(4);
+                r1c4.setCellValue("Height of Wall");
+                XSSFCell r1c5 = row1.createCell(5);
+                r1c5.setCellValue("Length of Wall");
+                XSSFCell r1c6 = row1.createCell(6);
+                r1c6.setCellValue("Thickness");
+                XSSFCell r1c7 = row1.createCell(7);
+                r1c7.setCellValue("Openings in Wall");
+                XSSFCell r1c8 = row1.createCell(8);
+                r1c8.setCellValue("Height of Taller Opening(H1)");
+                XSSFCell r1c9 = row1.createCell(9);
+                r1c9.setCellValue("Actual Height(H)");
+                XSSFCell r1c10 = row1.createCell(10);
+                r1c10.setCellValue("Effective Height(h)");
+                XSSFCell r1c11 = row1.createCell(11);
+                r1c11.setCellValue("Formula");
+                //XSSFCell r1c122 = row1.createCell(12);
+                //r1c122.setCellValue("Validate");
+
+                try {
+                    for (int i = 0; i < listModel.size(); i++) {
+                        //Create First Row
+
+                        Item item = listModel.getElementAt(i);
+                        String Val = (String) drpStorey.getSelectedItem();
+                        String DVal = item.getName();
+                        if (DVal.equals(Val)) {
+                            c.getLowerSlab(item.getPosiFloat(), FileId);
+                            rs = c.DqlStatement();
+                            if (rs.next() != false) {
+
+                                Float Lower_Slab_Thickness = rs.getFloat("Depth");
+
+                                c.getUpperSlab(item.getPosiFloat(), FileId);
+                                rs = c.DqlStatement();
+
+                                if (rs.next() != false) {
+                                    Float Upper_Slab_Thickness = rs.getFloat("Depth");
+
+                                    c.getWalls(item.getPosiFloat(), FileId);
+                                    Seprs = c.DqlStatement();
+                                    int rowcount = 1;
+                                    while (Seprs.next() != false) {
+                                        XSSFRow row = sheet.createRow(rowcount);
+
+                                        XSSFCell r1c = row.createCell(0);
+                                        r1c.setCellValue("Wall");
+                                        Float Start = 0.0f;
+                                        String GlobalId = Seprs.getString("GlobalId");
+                                        c.getLengthOfWall(GlobalId, FileId);
+                                        ResultSet lenres = c.DqlStatement();
+                                        if (lenres.next() != false) {
+                                            Float Length_Of_Wall = lenres.getFloat("Length");
+                                            Float Thickness_Of_Wall = Seprs.getFloat("Thickness");
+
+                                            r1c = row.createCell(1);
+                                            r1c.setCellValue(GlobalId);
+
+                                            r1c = row.createCell(2);
+                                            r1c.setCellValue(Seprs.getString("Name"));
+
+                                            r1c = row.createCell(3);
+                                            r1c.setCellValue(Val);
+
+                                            r1c = row.createCell(4);
+                                            r1c.setCellValue(Seprs.getFloat("Height") / 1000);
+
+                                            r1c = row.createCell(5);
+                                            r1c.setCellValue(Length_Of_Wall / 1000);
+
+                                            r1c = row.createCell(6);
+                                            r1c.setCellValue(Thickness_Of_Wall / 1000);
+
+                                            if (Length_Of_Wall > (4 * Thickness_Of_Wall)) {
+                                                if (Float.compare(item.getPosiFloat(), Start) == 0) {
+                                                    Float Height = (Lower_Slab_Thickness / 1000) + (Seprs.getFloat("Height") / 1000) + ((Upper_Slab_Thickness / 1000) / 2);
+                                                    Double Effective_Height = 0.75 * Height;
+
+                                                    r1c = row.createCell(9);
+                                                    r1c.setCellValue(Height);
+
+                                                    r1c = row.createCell(10);
+                                                    r1c.setCellValue(Effective_Height);
+
+                                                    r1c = row.createCell(11);
+                                                    r1c.setCellValue("0.75*H");
+
+                                                    c.getEffectiveHeight(GlobalId);
+                                                    grs=c.DqlStatement();
+                                                    if (grs.next() == false) {
+                                                        c.insertEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                        c.DmlStatement();
+                                                    } else {
+                                                        c.updateEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                        c.DmlStatement();
+                                                    }
+                                                } else {
+                                                    Float Height = ((Lower_Slab_Thickness / 1000) / 2) + (Seprs.getFloat("Height") / 1000) + ((Upper_Slab_Thickness / 1000) / 2);
+                                                    Double Effective_Height = 0.75 * Height;
+
+                                                    r1c = row.createCell(9);
+                                                    r1c.setCellValue(Height);
+
+                                                    r1c = row.createCell(10);
+                                                    r1c.setCellValue(Effective_Height);
+
+                                                    r1c = row.createCell(11);
+                                                    r1c.setCellValue("0.75*H");
+                                                    c.getEffectiveHeight(GlobalId);
+                                                    grs=c.DqlStatement();
+                                                    if (grs.next() == false) {
+                                                        c.insertEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                        c.DmlStatement();
+                                                    } else {
+                                                        c.updateEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                        c.DmlStatement();
+                                                    }
+                                                }
+                                            } else {
+                                                c.getJointsOfWall(Seprs.getString("GlobalId"), FileId);
+                                                ResultSet joinres = c.DqlStatement();
+                                                if (joinres.next() != false) {
+                                                    int Joints = joinres.getInt("Joints");
+                                                    if (Joints > 0) {
+
+                                                        boolean IsColumn = false;
+                                                        float OpenSize = 0.0f;
+
+                                                        c.getConnectedWalls(Seprs.getString("GlobalId"), item.getPosiFloat(), FileId);
+                                                        ResultSet connectedwallres = c.DqlStatement();
+                                                        while (connectedwallres.next() != false) {
+                                                            jointwalls.addElement(connectedwallres.getString("GlobalId"));
+                                                        }
+                                                        int totopening = 0;
+                                                        if (jointwalls.size() >= 2) {
+
+                                                            for (int y = 0; y < jointwalls.size(); y++) {
+                                                                c.getOpeningsinWall(jointwalls.getElementAt(y), FileId);
+                                                                try {
+                                                                    ResultSet openres = c.DqlStatement();
+                                                                    if (openres.next() != false) {
+                                                                        int Opening = openres.getInt("Openings");
+                                                                        if (Opening > 0) {
+                                                                            totopening++;
+                                                                            c.getBiggestOpeningWall(jointwalls.getElementAt(y), FileId);
+                                                                            ResultSet opensizeres = c.DqlStatement();
+                                                                            if (opensizeres.next() != false) {
+                                                                                float OpenSizenew = opensizeres.getFloat("Height");
+                                                                                if (OpenSizenew > OpenSize) {
+                                                                                    OpenSize = OpenSizenew;
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                } catch (Exception ex) {
+
+                                                                }
+                                                            }
+                                                            if (totopening > 1) {
+                                                                IsColumn = true;
+                                                            }
+                                                        }
+
+                                                        if (IsColumn) {
+
+                                                            r1c = row.createCell(7);
+                                                            r1c.setCellValue(totopening);
+
+                                                            r1c = row.createCell(8);
+                                                            r1c.setCellValue(OpenSize);
+
+                                                            if (Float.compare(item.getPosiFloat(), Start) == 0) {
+                                                                Float Height = (Lower_Slab_Thickness / 1000) + (Seprs.getFloat("Height") / 1000) + ((Upper_Slab_Thickness / 1000) / 2);
+                                                                Double Effective_Height = (0.75 * Height) + (0.25 * (OpenSize / 1000));
+
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(Height);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(Effective_Height);
+
+                                                                r1c = row.createCell(11);
+                                                                r1c.setCellValue("0.75*H + 0.25*H1");
+                                                                c.getEffectiveHeight(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            } else {
+                                                                Float Height = ((Lower_Slab_Thickness / 1000) / 2) + (Seprs.getFloat("Height") / 1000) + ((Upper_Slab_Thickness / 1000) / 2);
+                                                                Double Effective_Height = 0.75 * Height + (0.25 * (OpenSize / 1000));
+
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(Height);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(Effective_Height);
+
+                                                                r1c = row.createCell(11);
+                                                                r1c.setCellValue("0.75*H + 0.25*H1");
+                                                                c.getEffectiveHeight(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            }
+                                                        } else {
+                                                            if (Float.compare(item.getPosiFloat(), Start) == 0) {
+                                                                Float Height = (Lower_Slab_Thickness / 1000) + (Seprs.getFloat("Height") / 1000) + ((Upper_Slab_Thickness / 1000) / 2);
+                                                                Double Effective_Height = 0.75 * Height;
+
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(Height);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(Effective_Height);
+
+                                                                r1c = row.createCell(11);
+                                                                r1c.setCellValue("0.75*H");
+                                                                c.getEffectiveHeight(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            } else {
+                                                                Float Height = ((Lower_Slab_Thickness / 1000) / 2) + (Seprs.getFloat("Height") / 1000) + ((Upper_Slab_Thickness / 1000) / 2);
+                                                                Double Effective_Height = 0.75 * Height;
+
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(Height);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(Effective_Height);
+
+                                                                r1c = row.createCell(11);
+                                                                r1c.setCellValue("0.75*H");
+                                                                c.getEffectiveHeight(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            }
+                                                        }
+
+                                                    } else {
+                                                        Float Height = (Lower_Slab_Thickness / 1000) + (Seprs.getFloat("Height") / 1000) + ((Upper_Slab_Thickness / 1000) / 2);
+                                                        Float Effective_Height = Height;
+
+                                                        r1c = row.createCell(9);
+                                                        r1c.setCellValue(Height);
+
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue(Effective_Height);
+
+                                                        r1c = row.createCell(11);
+                                                        r1c.setCellValue("H");
+                                                        c.getEffectiveHeight(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveHeight(GlobalId, Effective_Height, Height);
+                                                            c.DmlStatement();
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                        }
+                                        singlelinewalls = new DefaultListModel<String>();
+                                        jointwalls = new DefaultListModel<String>();
+                                        rowcount++;
+                                    }
+                                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                                    Path path = FileSystems.getDefault().getPath("").toAbsolutePath();
+                                    File ouputfiles = new File(path + "\\IFC_Height_Validations.xlsx");
+                                    FileOutputStream out = new FileOutputStream(ouputfiles);
+                                    workbook.write(out);
+                                    out.close();
+                                }
+                            }
+                        }
+                    }
+                    status.setText("Status: Check Performed");
+                    validatebutton.setEnabled(true);
+                } catch (Exception ex) {
+                    Logger.getLogger(MainWindowIfc.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else if (drpCheck.getSelectedIndex() == 2) {
+                try {
+                    for (int i = 0; i < listModel.size(); i++) {
+                        Item item = listModel.getElementAt(i);
+                        String Val = (String) drpStorey.getSelectedItem();
+                        String DVal = item.getName();
+                        if (DVal.equals(Val)) {
+
+                            XSSFWorkbook workbook = new XSSFWorkbook();
+                            XSSFSheet sheet = workbook.createSheet();
+
+                            //Create First Row
+                            XSSFRow row1 = sheet.createRow(0);
+                            XSSFCell r1c1 = row1.createCell(0);
+                            r1c1.setCellValue("Entity");
+                            XSSFCell r1c2 = row1.createCell(1);
+                            r1c2.setCellValue("GlobalId");
+                            XSSFCell r1c12 = row1.createCell(2);
+                            r1c12.setCellValue("Name");
+                            XSSFCell r1c3 = row1.createCell(3);
+                            r1c3.setCellValue("Storey");
+                            XSSFCell r1c4 = row1.createCell(4);
+                            r1c4.setCellValue("Height of Wall");
+                            XSSFCell r1c5 = row1.createCell(5);
+                            r1c5.setCellValue("Length of Wall(L)");
+                            XSSFCell r1c6 = row1.createCell(6);
+                            r1c6.setCellValue("Thickness");
+                            XSSFCell r1c7 = row1.createCell(7);
+                            r1c7.setCellValue("Openings in Wall");
+                            XSSFCell r1c8 = row1.createCell(8);
+                            r1c8.setCellValue("Height of Taller Opening");
+                            XSSFCell r1c10 = row1.createCell(9);
+                            r1c10.setCellValue("Effective Length(l)");
+                            XSSFCell r1c11 = row1.createCell(10);
+                            r1c11.setCellValue("Formula");
+
+                            c.getWalls(item.getPosiFloat(), FileId);
+                            Seprs = c.DqlStatement();
+                            int rowcount = 1;
+                            while (Seprs.next() != false) {
+
+                                Float Start = 0.0f;
+                                c.getLengthOfWall(Seprs.getString("GlobalId"), FileId);
+                                ResultSet lenres = c.DqlStatement();
+                                if (lenres.next() != false) {
+
+                                    c.getSingleLineWalls(Seprs.getString("GlobalId"), item.getPosiFloat(), FileId);
+                                    ResultSet singlelinewallsres = c.DqlStatement();
+                                    while (singlelinewallsres.next() != false) {
+                                        singlelinewalls.addElement(singlelinewallsres.getString("GlobalId"));
+                                    }
+                                    String GlobalId = Seprs.getString("GlobalId");
+                                    c.getConnectedWalls(GlobalId, item.getPosiFloat(), FileId);
+                                    ResultSet connectedwallres = c.DqlStatement();
+                                    while (connectedwallres.next() != false) {
+                                        jointwalls.addElement(connectedwallres.getString("GlobalId"));
+                                    }
+                                    int counter = 0;
+
+                                    for (int j = 0; j < singlelinewalls.size(); j++) {
+
+                                        for (int k = 0; k < jointwalls.size(); k++) {
+                                            if (singlelinewalls.getElementAt(j).equals(jointwalls.getElementAt(k))) {
+                                                counter++;
+
+                                            }
+
+                                        }
+
+                                    }
+
+                                    for (int k = 0; k < jointwalls.size(); k++) {
+                                        boolean IsCrossJoin = true;
+                                        for (int j = 0; j < singlelinewalls.size(); j++) {
+                                            if (singlelinewalls.getElementAt(j).equals(jointwalls.getElementAt(k))) {
+                                                IsCrossJoin = false;
+
+                                            }
+
+                                        }
+                                        if (IsCrossJoin) {
+                                            crossJoins.addElement(jointwalls.getElementAt(k));
+                                        }
+
+                                    }
+
+                                    c.getOpeningsinWall(GlobalId, FileId);
+
+                                    int totopening = 0;
+                                    boolean isColumn = false;
+                                    Float OpenSize = 0.0f;
+                                    ResultSet openres = c.DqlStatement();
+                                    if (openres.next() != false) {
+                                        int Opening = openres.getInt("Openings");
+                                        if (Opening > 0) {
+
+                                            c.getBiggestOpeningWall(GlobalId, FileId);
+                                            ResultSet opensizeres = c.DqlStatement();
+                                            if (opensizeres.next() != false) {
+                                                Float OpeningHeight = opensizeres.getFloat("Height");
+                                                Float Height_Of_Wall = Seprs.getFloat("Height");
+
+                                                boolean IsFree = false;
+                                                if (OpeningHeight > (0.5 * Height_Of_Wall)) {
+                                                    // r1c = row.createCell(10);
+                                                    // r1c.setCellValue("Not Applicable");
+                                                } else {
+                                                    XSSFRow row = sheet.createRow(rowcount);
+                                                    rowcount++;
+                                                    XSSFCell r1c = row.createCell(0);
+                                                    r1c.setCellValue("Wall");
+                                                    Float Length_Of_Wall = lenres.getFloat("Length");
+
+                                                    Float Thickness_Of_Wall = Seprs.getFloat("Thickness");
+
+                                                    Float Extra_Length = crossJoins.size() * (Thickness_Of_Wall / 2);
+                                                    Length_Of_Wall = Length_Of_Wall - Extra_Length;
+
+                                                    r1c = row.createCell(1);
+                                                    r1c.setCellValue(GlobalId);
+
+                                                    r1c = row.createCell(2);
+                                                    r1c.setCellValue(Seprs.getString("Name"));
+
+                                                    r1c = row.createCell(3);
+                                                    r1c.setCellValue(Val);
+
+                                                    r1c = row.createCell(4);
+                                                    r1c.setCellValue(Seprs.getFloat("Height") / 1000);
+
+                                                    r1c = row.createCell(5);
+                                                    r1c.setCellValue(Length_Of_Wall / 1000);
+
+                                                    r1c = row.createCell(6);
+                                                    r1c.setCellValue(Thickness_Of_Wall / 1000);
+
+                                                    r1c = row.createCell(7);
+                                                    r1c.setCellValue(Opening);
+
+                                                    r1c = row.createCell(8);
+                                                    r1c.setCellValue(OpeningHeight);
+
+                                                    for (int x = 0; x < jointwalls.size(); x++) {
+                                                        c.getLengthOfWall(jointwalls.getElementAt(x), FileId);
+                                                        ResultSet joinlenres = c.DqlStatement();
+                                                        if (joinlenres.next() != false) {
+                                                            Float Length_Of__Join_Wall = (joinlenres.getFloat("Length")) / 1000;
+                                                            Float Height_Of__Join_Wall = 0.0f;
+                                                            Float Thickness_Of__Join_Wall = 0.0f;
+                                                            if ((Length_Of__Join_Wall - 0.095) < ((Height_Of_Wall / 1000) / 5)) {
+                                                                IsFree = true;
+                                                            }
+                                                            c.getWallDetails(jointwalls.getElementAt(x), FileId);
+                                                            ResultSet wallDetailsres = c.DqlStatement();
+                                                            if (wallDetailsres.next()) {
+                                                                Height_Of__Join_Wall = wallDetailsres.getFloat("Height");
+                                                                Thickness_Of__Join_Wall = wallDetailsres.getFloat("Thickness");
+                                                            }
+                                                            c.getOpeningsinWall(jointwalls.getElementAt(x), FileId);
+                                                            try {
+                                                                ResultSet openress = c.DqlStatement();
+                                                                if (openress.next() != false) {
+                                                                    int Openings = openress.getInt("Openings");
+                                                                    if (Openings > 0) {
+
+                                                                        c.getBiggestOpeningWall(jointwalls.getElementAt(x), FileId);
+                                                                        ResultSet opensizeress = c.DqlStatement();
+                                                                        if (opensizeress.next() != false) {
+                                                                            float OpenSizenew = opensizeress.getFloat("Height");
+
+                                                                            if (OpenSizenew > (0.5 * Height_Of__Join_Wall)) {
+                                                                                c.getOpeningDistancefromFace(jointwalls.getElementAt(x), FileId);
+                                                                                ResultSet openDisres = c.DqlStatement();
+                                                                                if (openDisres.next()) {
+                                                                                    float Distance_FromFace = openDisres.getFloat("Distance");
+                                                                                    if (Distance_FromFace > (Height_Of__Join_Wall / 8)) {
+                                                                                        totopening++;
+                                                                                    }
+                                                                                }
+
+                                                                            }
+
+                                                                            if (OpenSizenew > OpenSize) {
+                                                                                OpenSize = OpenSizenew;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            } catch (Exception ex) {
+
+                                                            }
+                                                        }
+                                                    }
+                                                    if (totopening >= 2) {
+                                                        isColumn = true;
+                                                    }
+
+                                                    if (isColumn) {
+                                                        r1c = row.createCell(7);
+                                                        r1c.setCellValue(totopening);
+
+                                                        r1c = row.createCell(8);
+                                                        r1c.setCellValue(OpenSize);
+
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue("No Support. Selenderness is governed by Element's Height");
+                                                        c.getEffectiveLength(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveLength(GlobalId, -1, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveLength(GlobalId, -1, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        }
+                                                    } else if (totopening == 1) {
+                                                        r1c = row.createCell(7);
+                                                        r1c.setCellValue(totopening);
+
+                                                        r1c = row.createCell(8);
+                                                        r1c.setCellValue(OpenSize);
+
+                                                        if (counter == 1 && crossJoins.size() >= 1) {
+                                                            Double Effective_Length = 1.5 * Length_Of_Wall;
+
+                                                            r1c = row.createCell(9);
+                                                            r1c.setCellValue(Effective_Length);
+
+                                                            r1c = row.createCell(10);
+                                                            r1c.setCellValue("1.5*L");
+
+                                                            c.getEffectiveLength(GlobalId);
+                                                            grs=c.DqlStatement();
+                                                            if (grs.next() == false) {
+                                                                c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                c.DmlStatement();
+                                                            } else {
+                                                                c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                c.DmlStatement();
+                                                            }
+                                                        }
+                                                        if (counter == 0 && crossJoins.size() >= 1) {
+                                                            Float Effective_Length = 2 * Length_Of_Wall;
+
+                                                            r1c = row.createCell(9);
+                                                            r1c.setCellValue(Effective_Length/1000);
+
+                                                            r1c = row.createCell(10);
+                                                            r1c.setCellValue("2*L");
+                                                            c.getEffectiveLength(GlobalId);
+                                                            grs=c.DqlStatement();
+                                                            if (grs.next() == false) {
+                                                                c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                c.DmlStatement();
+                                                            } else {
+                                                                c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                c.DmlStatement();
+                                                            }
+                                                        }
+                                                    } else {
+                                                        if (counter == 0 && crossJoins.size() == 1 && jointwalls.size() == 1) {
+                                                            IsFree = true;
+                                                        }
+                                                        if (IsFree) {
+
+                                                            if (counter == 1 && crossJoins.size() >= 1) {
+                                                                Double Effective_Length = 1.5 * Length_Of_Wall;
+
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(Effective_Length/1000);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue("1.5*L");
+                                                                c.getEffectiveLength(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            } else if (counter == 0 && crossJoins.size() >= 1) {
+                                                                Float Effective_Length = 2 * Length_Of_Wall;
+
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(Effective_Length/1000);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue("2*L");
+                                                                c.getEffectiveLength(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            }
+                                                        } else {
+                                                            if (counter == 0 && crossJoins.size() >= 2) {
+                                                                Float Effective_Length = 1 * Length_Of_Wall;
+
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(Effective_Length/1000);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue("1*L");
+                                                                c.getEffectiveLength(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            } else if (counter == 1 && crossJoins.size() >= 1) {
+                                                                Double Effective_Length = 0.9 * Length_Of_Wall;
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(Effective_Length/1000);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue("0.9*L");
+                                                                c.getEffectiveLength(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            } else if (counter >= 2 && crossJoins.size() >= 1) {
+                                                                Double Effective_Length = 0.8 * Length_Of_Wall;
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(Effective_Length/1000);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue("0.8*L");
+                                                                c.getEffectiveLength(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            } else if (counter == 0 && crossJoins.size() == 0 && jointwalls.size() == 0) {
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue("No Support on Either Side, Selenderness governed by Height");
+
+                                                                c.getEffectiveLength(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveLength(GlobalId, -1, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveLength(GlobalId, -1, Length_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                            }
+                                        } else {
+                                            boolean IsFree = false;
+                                            XSSFRow row = sheet.createRow(rowcount);
+                                            rowcount++;
+
+                                            XSSFCell r1c = row.createCell(0);
+                                            r1c.setCellValue("Wall");
+                                            Float Length_Of_Wall = lenres.getFloat("Length");
+                                            Float Thickness_Of_Wall = Seprs.getFloat("Thickness");
+
+                                            Float Extra_Length = crossJoins.size() * (Thickness_Of_Wall / 2);
+                                            Length_Of_Wall = Length_Of_Wall - Extra_Length;
+
+                                            r1c = row.createCell(1);
+                                            r1c.setCellValue(Seprs.getString("GlobalId"));
+
+                                            r1c = row.createCell(2);
+                                            r1c.setCellValue(Seprs.getString("Name"));
+
+                                            r1c = row.createCell(3);
+                                            r1c.setCellValue(Val);
+
+                                            r1c = row.createCell(4);
+                                            r1c.setCellValue(Seprs.getFloat("Height")/1000);
+
+                                            r1c = row.createCell(5);
+                                            r1c.setCellValue(Length_Of_Wall/1000);
+
+                                            r1c = row.createCell(6);
+                                            r1c.setCellValue(Thickness_Of_Wall/1000);
+
+                                            r1c = row.createCell(7);
+                                            r1c.setCellValue(Opening);
+
+                                            Float Height_Of_Wall = Seprs.getFloat("Height");
+                                            for (int x = 0; x < jointwalls.size(); x++) {
+                                                c.getLengthOfWall(jointwalls.elementAt(x), FileId);
+                                                ResultSet joinlenres = c.DqlStatement();
+                                                if (joinlenres.next() != false) {
+                                                    Float Length_Of__Join_Wall = (joinlenres.getFloat("Length")) / 1000;
+
+                                                    if ((Length_Of__Join_Wall - 0.095) < ((Height_Of_Wall / 1000) / 6)) {
+                                                        IsFree = true;
+                                                    }
+
+                                                    c.getOpeningsinWall(jointwalls.getElementAt(x), FileId);
+                                                    try {
+                                                        ResultSet openress = c.DqlStatement();
+                                                        if (openress.next() != false) {
+                                                            int Openings = openress.getInt("Openings");
+                                                            if (Openings > 0) {
+
+                                                                Float Height_Of__Join_Wall = 0.0f;
+                                                                Float Thickness_Of__Join_Wall = 0.0f;
+                                                                c.getWallDetails(jointwalls.getElementAt(x), FileId);
+                                                                ResultSet wallDetailsres = c.DqlStatement();
+
+                                                                if (wallDetailsres.next()) {
+                                                                    Height_Of__Join_Wall = wallDetailsres.getFloat("Height");
+                                                                    Thickness_Of__Join_Wall = wallDetailsres.getFloat("Thickness");
+                                                                }
+                                                                c.getBiggestOpeningWall(jointwalls.getElementAt(x), FileId);
+                                                                ResultSet opensizeress = c.DqlStatement();
+                                                                if (opensizeress.next() != false) {
+                                                                    float OpenSizenew = opensizeress.getFloat("Height");
+
+                                                                    if (OpenSizenew > (0.5 * Height_Of__Join_Wall)) {
+                                                                        c.getOpeningDistancefromFace(jointwalls.getElementAt(x), FileId);
+                                                                        ResultSet openDisres = c.DqlStatement();
+                                                                        if (openDisres.next()) {
+                                                                            float Distance_FromFace = openDisres.getFloat("Distance");
+                                                                            if (Distance_FromFace > (Height_Of__Join_Wall / 8)) {
+                                                                                totopening++;
+                                                                            }
+                                                                        }
+                                                                    }
+
+                                                                    if (OpenSizenew > OpenSize) {
+                                                                        OpenSize = OpenSizenew;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    } catch (Exception ex) {
+
+                                                    }
+                                                }
+                                            }
+                                            if (totopening >= 2) {
+                                                isColumn = true;
+                                            }
+
+                                            if (isColumn) {
+                                                r1c = row.createCell(7);
+                                                r1c.setCellValue(totopening);
+
+                                                r1c = row.createCell(8);
+                                                r1c.setCellValue(OpenSize/1000);
+                                                r1c = row.createCell(10);
+                                                r1c.setCellValue("No Support. Selenderness is governed by Element's Height");
+                                                c.getEffectiveLength(GlobalId);
+                                                grs=c.DqlStatement();
+                                                if (grs.next() == false) {
+                                                    c.insertEffectiveLength(GlobalId, -1, Length_Of_Wall/1000);
+                                                    c.DmlStatement();
+                                                } else {
+                                                    c.updateEffectiveLength(GlobalId, -1, Length_Of_Wall/1000);
+                                                    c.DmlStatement();
+                                                }
+                                            } else if (totopening == 1) {
+                                                if (counter == 1 && crossJoins.size() >= 1) {
+                                                    Double Effective_Length = 1.5 * Length_Of_Wall;
+
+                                                    r1c = row.createCell(9);
+                                                    r1c.setCellValue(Effective_Length/1000);
+
+                                                    r1c = row.createCell(10);
+                                                    r1c.setCellValue("1.5*L");
+                                                    c.getEffectiveLength(GlobalId);
+                                                    grs=c.DqlStatement();
+                                                    if (grs.next() == false) {
+                                                        c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                        c.DmlStatement();
+                                                    } else {
+                                                        c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                        c.DmlStatement();
+                                                    }
+                                                }
+                                                if (counter == 0 && crossJoins.size() >= 1) {
+                                                    Float Effective_Length = 2 * Length_Of_Wall;
+
+                                                    r1c = row.createCell(9);
+                                                    r1c.setCellValue(Effective_Length/1000);
+
+                                                    r1c = row.createCell(10);
+                                                    r1c.setCellValue("2*L");
+                                                    c.getEffectiveLength(GlobalId);
+                                                    grs=c.DqlStatement();
+                                                    if (grs.next() == false) {
+                                                        c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                        c.DmlStatement();
+                                                    } else {
+                                                        c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                        c.DmlStatement();
+                                                    }
+                                                }
+                                            } else {
+                                                if (counter == 0 && crossJoins.size() == 1 && jointwalls.size() == 1) {
+                                                    IsFree = true;
+                                                }
+                                                if (counter == 1 && crossJoins.size() == 0 && jointwalls.size() == 1) {
+                                                    IsFree = true;
+                                                }
+                                                if (IsFree) {
+
+                                                    if (counter == 1 && crossJoins.size() >= 0) {
+                                                        Double Effective_Length = 1.5 * Length_Of_Wall;
+
+                                                        r1c = row.createCell(9);
+                                                        r1c.setCellValue(Effective_Length/1000);
+
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue("1.5*L");
+                                                        c.getEffectiveLength(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        }
+                                                    } else if (counter == 0 && crossJoins.size() >= 1) {
+                                                        Float Effective_Length = 2 * Length_Of_Wall;
+
+                                                        r1c = row.createCell(9);
+                                                        r1c.setCellValue(Effective_Length/1000);
+
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue("2*L");
+                                                        c.getEffectiveLength(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        }
+                                                    }
+                                                } else {
+                                                    if (counter == 0 && crossJoins.size() >= 2) {
+                                                        Float Effective_Length = 1 * Length_Of_Wall;
+
+                                                        r1c = row.createCell(9);
+                                                        r1c.setCellValue(Effective_Length/1000);
+
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue("1*L");
+                                                        c.getEffectiveLength(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        }
+                                                    } else if (counter == 1 && crossJoins.size() >= 1) {
+                                                        Double Effective_Length = 0.9 * Length_Of_Wall;
+
+                                                        r1c = row.createCell(9);
+                                                        r1c.setCellValue(Effective_Length/1000);
+
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue("0.9*L");
+                                                        c.getEffectiveLength(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        }
+                                                    } else if (counter >= 2 && crossJoins.size() >= 1) {
+                                                        Double Effective_Length = 0.8 * Length_Of_Wall;
+                                                        r1c = row.createCell(9);
+                                                        r1c.setCellValue(Effective_Length/1000);
+
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue("0.8*L");
+                                                        c.getEffectiveLength(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveLength(GlobalId, Effective_Length/1000, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        }
+                                                    } else if (counter == 0 && crossJoins.size() == 0 && jointwalls.size() == 0) {
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue("No Support. Selenderness is governed by Element's Height");
+
+                                                        c.getEffectiveLength(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveLength(GlobalId, -1, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveLength(GlobalId, -1, Length_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        }
+                                                    }
+
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                }
+                                singlelinewalls = new DefaultListModel<String>();
+                                jointwalls = new DefaultListModel<String>();
+                                crossJoins = new DefaultListModel<String>();
+
+                            }
+
+                            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                            Path path = FileSystems.getDefault().getPath("").toAbsolutePath();
+                            File ouputfiles = new File(path + "\\IFC_Lenght_Validations.xlsx");
+                            FileOutputStream out = new FileOutputStream(ouputfiles);
+                            workbook.write(out);
+                            out.close();
+
+                        }
+                    }
+                    status.setText("Status: Check Performed");
+                    validatebutton.setEnabled(true);
+                } catch (Exception ex) {
+                    System.out.println(ex.toString());
+                    Logger.getLogger(MainWindowIfc.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else if (drpCheck.getSelectedIndex() == 3) {
+                try {
+                    for (int i = 0; i < listModel.size(); i++) {
+                        Item item = listModel.getElementAt(i);
+                        String Val = (String) drpStorey.getSelectedItem();
+                        String DVal = item.getName();
+                        if (DVal.equals(Val)) {
+ 
+                            XSSFWorkbook workbook = new XSSFWorkbook();
+                            XSSFSheet sheet = workbook.createSheet();
+
+                            //Create First Row
+                            XSSFRow row1 = sheet.createRow(0);
+                            XSSFCell r1c1 = row1.createCell(0);
+                            r1c1.setCellValue("Entity");
+                            XSSFCell r1c2 = row1.createCell(1);
+                            r1c2.setCellValue("GlobalId");
+                            XSSFCell r1c12 = row1.createCell(2);
+                            r1c12.setCellValue("Name");
+                            XSSFCell r1c3 = row1.createCell(3);
+                            r1c3.setCellValue("Storey");
+                            XSSFCell r1c4 = row1.createCell(4);
+                            r1c4.setCellValue("Height of Wall");
+                            XSSFCell r1c5 = row1.createCell(5);
+                            r1c5.setCellValue("Length of Wall(L)");
+                            XSSFCell r1c6 = row1.createCell(6);
+                            r1c6.setCellValue("Thickness");
+                            XSSFCell r1c7 = row1.createCell(7);
+                            r1c7.setCellValue("Openings in Wall");
+                            XSSFCell r1c8 = row1.createCell(8);
+                            r1c8.setCellValue("Height of Taller Opening");
+                            XSSFCell r1c10 = row1.createCell(9);
+                            r1c10.setCellValue("tp/tw");
+                            XSSFCell r1c11 = row1.createCell(10);
+                            r1c11.setCellValue("Sp/Wp");
+                            XSSFCell r1c122 = row1.createCell(11);
+                            r1c122.setCellValue("Stiffning Cofficient(kn)");
+                            XSSFCell r1c13 = row1.createCell(12);
+                            r1c13.setCellValue("Formula");
+
+                            c.getWalls(item.getPosiFloat(), FileId);
+                            Seprs = c.DqlStatement();
+                            int rowcount = 1;
+                            while (Seprs.next() != false) {
+
+                                Float Start = 0.0f;
+                                c.getLengthOfWall(Seprs.getString("GlobalId"), FileId);
+                                ResultSet lenres = c.DqlStatement();
+                                String GlobalId = Seprs.getString("GlobalId");
+                                if (lenres.next() != false) {
+
+                                    c.getSingleLineWalls(GlobalId, item.getPosiFloat(), FileId);
+                                    ResultSet singlelinewallsres = c.DqlStatement();
+                                    while (singlelinewallsres.next() != false) {
+                                        singlelinewalls.addElement(singlelinewallsres.getString("GlobalId"));
+                                    }
+                                    
+                                    c.getConnectedWalls(GlobalId, item.getPosiFloat(), FileId);
+                                    ResultSet connectedwallres = c.DqlStatement();
+                                    while (connectedwallres.next() != false) {
+                                        jointwalls.addElement(connectedwallres.getString("GlobalId"));
+                                    }
+                                    int counter = 0;
+
+                                    for (int j = 0; j < singlelinewalls.size(); j++) {
+
+                                        for (int k = 0; k < jointwalls.size(); k++) {
+                                            if (singlelinewalls.getElementAt(j).equals(jointwalls.getElementAt(k))) {
+                                                counter++;
+
+                                            }
+
+                                        }
+
+                                    }
+
+                                    for (int k = 0; k < jointwalls.size(); k++) {
+                                        boolean IsCrossJoin = true;
+                                        for (int j = 0; j < singlelinewalls.size(); j++) {
+                                            if (singlelinewalls.getElementAt(j).equals(jointwalls.getElementAt(k))) {
+                                                IsCrossJoin = false;
+                                            }
+
+                                        }
+                                        if (IsCrossJoin) {
+                                            crossJoins.addElement(jointwalls.getElementAt(k));
+                                        }
+
+                                    }
+
+                                    c.getOpeningsinWall(GlobalId, FileId);
+
+                                    int totopening = 0;
+                                    boolean isColumn = false;
+                                    Float OpenSize = 0.0f;
+                                    ResultSet openres = c.DqlStatement();
+                                    if (openres.next() != false) {
+                                        int Opening = openres.getInt("Openings");
+                                        if (Opening > 0) {
+
+                                            c.getBiggestOpeningWall(GlobalId, FileId);
+                                            ResultSet opensizeres = c.DqlStatement();
+                                            if (opensizeres.next() != false) {
+                                                Float OpeningHeight = opensizeres.getFloat("Height");
+                                                Float Height_Of_Wall = Seprs.getFloat("Height");
+
+                                                boolean IsFree = false;
+                                                if (OpeningHeight > (0.5 * Height_Of_Wall)) {
+                                                    Float Thickness_Of_Wall = Seprs.getFloat("Thickness");
+                                                    Float Effective_Thickness=Thickness_Of_Wall;
+                                                } else {
+                                                    XSSFRow row = sheet.createRow(rowcount);
+                                                    rowcount++;
+                                                    XSSFCell r1c = row.createCell(0);
+                                                    r1c.setCellValue("Wall");
+                                                    Float Length_Of_Wall = lenres.getFloat("Length");
+
+                                                    Float Thickness_Of_Wall = Seprs.getFloat("Thickness");
+
+                                                    Float Extra_Length = crossJoins.size() * (Thickness_Of_Wall / 2);
+                                                    Length_Of_Wall = Length_Of_Wall - Extra_Length;
+
+                                                    r1c = row.createCell(1);
+                                                    r1c.setCellValue(GlobalId);
+
+                                                    r1c = row.createCell(2);
+                                                    r1c.setCellValue(Seprs.getString("Name"));
+
+                                                    r1c = row.createCell(3);
+                                                    r1c.setCellValue(Val);
+
+                                                    r1c = row.createCell(4);
+                                                    r1c.setCellValue(Seprs.getFloat("Height") / 1000);
+
+                                                    r1c = row.createCell(5);
+                                                    r1c.setCellValue(Length_Of_Wall / 1000);
+
+                                                    r1c = row.createCell(6);
+                                                    r1c.setCellValue(Thickness_Of_Wall / 1000);
+
+                                                    r1c = row.createCell(7);
+                                                    r1c.setCellValue(Opening);
+
+                                                    r1c = row.createCell(8);
+                                                    r1c.setCellValue(OpeningHeight/1000);
+
+                                                    for (int x = 0; x < jointwalls.size(); x++) {
+                                                        c.getLengthOfWall(jointwalls.getElementAt(x), FileId);
+                                                        ResultSet joinlenres = c.DqlStatement();
+                                                        if (joinlenres.next() != false) {
+                                                            Float Length_Of__Join_Wall = (joinlenres.getFloat("Length")) / 1000;
+                                                            Float Height_Of__Join_Wall = 0.0f;
+                                                            Float Thickness_Of__Join_Wall = 0.0f;
+                                                            if ((Length_Of__Join_Wall - 0.095) < ((Height_Of_Wall / 1000) / 5)) {
+                                                                IsFree = true;
+                                                            }
+                                                            c.getWallDetails(jointwalls.getElementAt(x), FileId);
+                                                            ResultSet wallDetailsres = c.DqlStatement();
+                                                            if (wallDetailsres.next()) {
+                                                                Height_Of__Join_Wall = wallDetailsres.getFloat("Height");
+                                                                Thickness_Of__Join_Wall = wallDetailsres.getFloat("Thickness");
+                                                            }
+                                                            c.getOpeningsinWall(jointwalls.getElementAt(x), FileId);
+                                                            try {
+                                                                ResultSet openress = c.DqlStatement();
+                                                                if (openress.next() != false) {
+                                                                    int Openings = openress.getInt("Openings");
+                                                                    if (Openings > 0) {
+
+                                                                        c.getBiggestOpeningWall(jointwalls.getElementAt(x), FileId);
+                                                                        ResultSet opensizeress = c.DqlStatement();
+                                                                        if (opensizeress.next() != false) {
+                                                                            float OpenSizenew = opensizeress.getFloat("Height");
+
+                                                                            if (OpenSizenew > (0.5 * Height_Of__Join_Wall)) {
+                                                                                c.getOpeningDistancefromFace(jointwalls.getElementAt(x), FileId);
+                                                                                ResultSet openDisres = c.DqlStatement();
+                                                                                if (openDisres.next()) {
+                                                                                    float Distance_FromFace = openDisres.getFloat("Distance");
+                                                                                    if (Distance_FromFace > (Height_Of__Join_Wall / 8)) {
+                                                                                        totopening++;
+                                                                                    }
+                                                                                }
+
+                                                                            }
+
+                                                                            if (OpenSizenew > OpenSize) {
+                                                                                OpenSize = OpenSizenew;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            } catch (Exception ex) {
+
+                                                            }
+                                                        }
+                                                    }
+                                                    if (totopening >= 2) {
+                                                        isColumn = true;
+                                                    }
+
+                                                    if (isColumn) {
+                                                        r1c = row.createCell(7);
+                                                        r1c.setCellValue(totopening);
+
+                                                        r1c = row.createCell(8);
+                                                        r1c.setCellValue(OpenSize);
+
+                                                        r1c = row.createCell(9);
+                                                        r1c.setCellValue("N/A");
+                                                        
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue("N/A");                                                        
+                                                        
+                                                        r1c = row.createCell(11);
+                                                        r1c.setCellValue(1);
+                                                        
+                                                        double diff=Length_Of_Wall/(Thickness_Of_Wall-100);
+                                                        // Need to find  find Stiffning Cofficient
+                                                        c.getEffectiveThickness(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveThickness(GlobalId,1, Thickness_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        }
+                                                    } else if (totopening == 1) {
+                                                        r1c = row.createCell(7);
+                                                        r1c.setCellValue(totopening);
+
+                                                        r1c = row.createCell(8);
+                                                        r1c.setCellValue(OpenSize);
+
+                                                        if (counter == 1 && crossJoins.size() >= 1) {
+                                                            
+
+                                                            r1c = row.createCell(9);
+                                                            r1c.setCellValue("N/A");
+
+                                                            r1c = row.createCell(10);
+                                                            r1c.setCellValue("N/A");
+                                                                                                                        
+                                                            r1c = row.createCell(11);
+                                                            r1c.setCellValue(1);
+                                                            
+                                                            double diff=Length_Of_Wall/(Thickness_Of_Wall-100);
+                                                            // Need to find  find Stiffning Cofficient
+                                                            c.getEffectiveThickness(GlobalId);
+                                                        
+                                                            grs=c.DqlStatement();
+                                                            if (grs.next() == false) {
+                                                                c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                                c.DmlStatement();
+                                                            } else {
+                                                                c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                                c.DmlStatement();
+                                                            }
+                                                        }
+                                                        if (counter == 0 && crossJoins.size() >= 1) {
+
+                                                            r1c = row.createCell(9);
+                                                            r1c.setCellValue("N/A");
+
+                                                            r1c = row.createCell(10);
+                                                            r1c.setCellValue("N/A");
+                                                            
+                                                            r1c = row.createCell(11);
+                                                            r1c.setCellValue(1);
+                                                            
+                                                            double diff=Length_Of_Wall/(Thickness_Of_Wall-100);
+                                                            
+                                                            c.getEffectiveThickness(GlobalId);
+                                                            grs=c.DqlStatement();
+                                                            if (grs.next() == false) {
+                                                                c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                                c.DmlStatement();
+                                                            } else {
+                                                                c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                                c.DmlStatement();
+                                                            }
+                                                        }
+                                                    } else {
+                                                        if (counter == 0 && crossJoins.size() == 1 && jointwalls.size() == 1) {
+                                                            IsFree = true;
+                                                        }
+                                                        if (IsFree) {
+
+                                                            if (counter == 1 && crossJoins.size() >= 1) {
+                                                                
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue("N/A");
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue("N/A");
+                                                                
+                                                            r1c = row.createCell(11);
+                                                            r1c.setCellValue(1);                                                                
+                                                                double diff=Length_Of_Wall/(Thickness_Of_Wall-100);
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            } else if (counter == 0 && crossJoins.size() >= 1) {
+                                                                
+
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue("N/A");
+                                                                
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue("N/A");
+
+                                                                r1c = row.createCell(11);
+                                                                r1c.setCellValue(1);
+                                                                
+                                                                double diff=Length_Of_Wall/(Thickness_Of_Wall-100);
+                                                                
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveLength(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                            }
+                                                        } else {
+                                                            if (counter == 0 && crossJoins.size() >= 2) {
+                                                                
+                                                                double tpw=3;
+                                                                double spw=(Length_Of_Wall/1000)/((Thickness_Of_Wall/1000)-0.01);
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(tpw);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(spw);                                                                
+ 
+                                                                c.getStiffeningCofficient(tpw, spw);
+                                                                stiffening_res=c.DqlStatement();
+                                                                if(stiffening_res.next()!=false)
+                                                                {
+                                                                    double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                                                                     r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                                }
+                                                                                                                                else
+      {
+          c.getshortestStiffeningCofficient((long)tpw);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+            }
+      }
+                                                             
+                                                            } else if (counter == 1 && crossJoins.size() >= 1) {
+                                                                double tpw=3;
+                                                                double spw=(Length_Of_Wall/1000)/((Thickness_Of_Wall/1000)-0.01);
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(tpw);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(spw);                                                                
+ 
+                                                                c.getStiffeningCofficient(tpw, spw);
+                                                                stiffening_res=c.DqlStatement();
+                                                                if(stiffening_res.next()!=false)
+                                                                {
+                                                                    double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                                                                     r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                                }
+                                                                else
+      {
+          c.getshortestStiffeningCofficient((long)tpw);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+            }
+      }
+                                                            } else if (counter >= 2 && crossJoins.size() >= 1) {
+                                                               double tpw=3;
+                                                                double spw=(Length_Of_Wall/1000)/((Thickness_Of_Wall/1000)-0.01);
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(tpw);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(spw);                                                                
+ 
+                                                                c.getStiffeningCofficient(tpw, spw);
+                                                                stiffening_res=c.DqlStatement();
+                                                                if(stiffening_res.next()!=false)
+                                                                {
+                                                                    double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                                                                     r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                                }
+                                                                                                                                else
+      {
+          c.getshortestStiffeningCofficient((long)tpw);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+            }
+      }
+                                                            } else if (counter == 0 && crossJoins.size() == 0 && jointwalls.size() == 0) {
+                                                                double tpw=3;
+                                                                double spw=(Length_Of_Wall/1000)/((Thickness_Of_Wall/1000)-0.01);
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(tpw);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(spw);                                                                
+ 
+                                                                c.getStiffeningCofficient(tpw, spw);
+                                                                stiffening_res=c.DqlStatement();
+                                                                if(stiffening_res.next()!=false)
+                                                                {
+                                                                    double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                                                                     r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                                }
+                                                                                                                                else
+      {
+          c.getshortestStiffeningCofficient((long)tpw);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+            }
+      }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                            }
+                                        } else {
+                                            boolean IsFree = false;
+                                            XSSFRow row = sheet.createRow(rowcount);
+                                            rowcount++;
+
+                                            XSSFCell r1c = row.createCell(0);
+                                            r1c.setCellValue("Wall");
+                                            Float Length_Of_Wall = lenres.getFloat("Length");
+                                            Float Thickness_Of_Wall = Seprs.getFloat("Thickness");
+
+                                            Float Extra_Length = crossJoins.size() * (Thickness_Of_Wall / 2);
+                                            Length_Of_Wall = Length_Of_Wall - Extra_Length;
+
+                                            r1c = row.createCell(1);
+                                            r1c.setCellValue(Seprs.getString("GlobalId"));
+
+                                            r1c = row.createCell(2);
+                                            r1c.setCellValue(Seprs.getString("Name"));
+
+                                            r1c = row.createCell(3);
+                                            r1c.setCellValue(Val);
+
+                                            r1c = row.createCell(4);
+                                            r1c.setCellValue(Seprs.getFloat("Height")/1000);
+
+                                            r1c = row.createCell(5);
+                                            r1c.setCellValue(Length_Of_Wall/1000);
+
+                                            r1c = row.createCell(6);
+                                            r1c.setCellValue(Thickness_Of_Wall/1000);
+
+                                            r1c = row.createCell(7);
+                                            r1c.setCellValue(Opening);
+
+                                            Float Height_Of_Wall = Seprs.getFloat("Height");
+                                            for (int x = 0; x < jointwalls.size(); x++) {
+                                                c.getLengthOfWall(jointwalls.elementAt(x), FileId);
+                                                ResultSet joinlenres = c.DqlStatement();
+                                                if (joinlenres.next() != false) {
+                                                    float Length_Of__Join_Wall = (joinlenres.getFloat("Length")) / 1000;
+                                                    
+
+                                                    if ((Length_Of__Join_Wall - 0.095) < ((Height_Of_Wall / 1000) / 6)) {
+                                                        handle_special=true;
+Required_Length_Of__Join_Wall=Length_Of__Join_Wall-0.1f;
+                                                        IsFree = true;
+                                                    }
+
+                                                    c.getOpeningsinWall(jointwalls.getElementAt(x), FileId);
+                                                    try {
+                                                        ResultSet openress = c.DqlStatement();
+                                                        if (openress.next() != false) {
+                                                            int Openings = openress.getInt("Openings");
+                                                            if (Openings > 0) {
+
+                                                                Float Height_Of__Join_Wall = 0.0f;
+                                                                Float Thickness_Of__Join_Wall = 0.0f;
+                                                                c.getWallDetails(jointwalls.getElementAt(x), FileId);
+                                                                ResultSet wallDetailsres = c.DqlStatement();
+
+                                                                if (wallDetailsres.next()) {
+                                                                    Height_Of__Join_Wall = wallDetailsres.getFloat("Height");
+                                                                    Thickness_Of__Join_Wall = wallDetailsres.getFloat("Thickness");
+                                                                }
+                                                                c.getBiggestOpeningWall(jointwalls.getElementAt(x), FileId);
+                                                                ResultSet opensizeress = c.DqlStatement();
+                                                                if (opensizeress.next() != false) {
+                                                                    float OpenSizenew = opensizeress.getFloat("Height");
+
+                                                                    if (OpenSizenew > (0.5 * Height_Of__Join_Wall)) {
+                                                                        c.getOpeningDistancefromFace(jointwalls.getElementAt(x), FileId);
+                                                                        ResultSet openDisres = c.DqlStatement();
+                                                                        if (openDisres.next()) {
+                                                                            float Distance_FromFace = openDisres.getFloat("Distance");
+                                                                            if (Distance_FromFace > (Height_Of__Join_Wall / 8)) {
+                                                                                totopening++;
+                                                                            }
+                                                                        }
+                                                                    }
+
+                                                                    if (OpenSizenew > OpenSize) {
+                                                                        OpenSize = OpenSizenew;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    } catch (Exception ex) {
+
+                                                    }
+                                                }
+                                            }
+                                            if (totopening >= 2) {
+                                                isColumn = true;
+                                            }
+
+                                            if (isColumn) {
+                                                r1c = row.createCell(7);
+                                                r1c.setCellValue(totopening);
+
+                                                r1c = row.createCell(8);
+                                                r1c.setCellValue(OpenSize/1000);
+                                                
+                                                r1c=row.createCell(9);
+                                                r1c.setCellValue("N/A");
+                                                
+                                                r1c = row.createCell(10);
+                                                r1c.setCellValue("N/A");
+                                                
+                                                r1c = row.createCell(11);
+                                                r1c.setCellValue(1);
+                                                c.getEffectiveThickness(GlobalId);
+                                                grs=c.DqlStatement();
+                                                if (grs.next() == false) {
+                                                    c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                    c.DmlStatement();
+                                                } else {
+                                                    c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                    c.DmlStatement();
+                                                }
+                                            } else if (totopening == 1) {
+                                                if (counter == 1 && crossJoins.size() >= 1) {
+                                                    
+
+                                                    r1c = row.createCell(9);
+                                                    r1c.setCellValue("N/A");
+                                                    
+                                                    r1c = row.createCell(10);
+                                                    r1c.setCellValue("N/A");                                                    
+
+                                                    r1c = row.createCell(11);
+                                                    r1c.setCellValue(1);
+                                                    c.getEffectiveThickness(GlobalId);
+                                                    grs=c.DqlStatement();
+                                                    if (grs.next() == false) {
+                                                        c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                        c.DmlStatement();
+                                                    } else {
+                                                        c.updateEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                        c.DmlStatement();
+                                                    }
+                                                }
+                                                if (counter == 0 && crossJoins.size() >= 1) {
+                                                    
+                                                    r1c = row.createCell(9);
+                                                    r1c.setCellValue("N/A");
+                                                    
+                                                    r1c = row.createCell(10);
+                                                    r1c.setCellValue("N/A");                                                    
+
+                                                    r1c = row.createCell(11);
+                                                    r1c.setCellValue(1);
+                                                    c.getEffectiveThickness(GlobalId);
+                                                    grs=c.DqlStatement();
+                                                    if (grs.next() == false) {
+                                                        c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                        c.DmlStatement();
+                                                    } else {
+                                                        c.updateEffectiveLength(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                        c.DmlStatement();
+                                                    }
+                                                }
+                                            } else {
+                                                if (counter == 0 && crossJoins.size() == 1 && jointwalls.size() == 1) {
+                                                    IsFree = true;
+                                                }
+                                                if (counter == 1 && crossJoins.size() == 0 && jointwalls.size() == 1) {
+                                                    IsFree = true;
+                                                }
+                                                if (IsFree) {
+
+                                                    if (counter == 1 && crossJoins.size() >= 0) {
+                                                        
+
+    if(handle_special && (Length_Of_Wall>4*Thickness_Of_Wall))
+{
+
+                                                        double totaldec=((Required_Length_Of__Join_Wall)+0.095)/((Thickness_Of_Wall/1000)-0.01);
+                                                        double fract=totaldec-(long)totaldec;
+                                                        double tpw=(long)totaldec;
+                                                        if(fract>0.3)
+                                                        {
+                                                            if(fract<0.7)
+                                                            {
+                                                                tpw=tpw+0.5;
+                                                            }
+                                                            else
+                                                            {
+                                                                tpw=tpw+1;
+                                                           }
+                                                        }
+                                                        
+                                                                double spw=(Length_Of_Wall/1000)/((Thickness_Of_Wall/1000)-0.01);
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(tpw);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(spw);                                                                
+ if(tpw!=(long)tpw)
+ {
+     c.getStiffeningCofficient((long)tpw, spw);
+      stiffening_res=c.DqlStatement();
+      double first_stiff_cofficient=0.0;
+      double second_stiff_cofficient=0.0;
+      if(stiffening_res.next()!=false)
+      {
+          first_stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+      }
+      else
+      {
+          c.getshortestStiffeningCofficient((long)tpw);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                first_stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+            }
+      }
+      
+      c.getStiffeningCofficient((long)tpw+1, spw);
+      stiffening_res=c.DqlStatement();
+      if(stiffening_res.next()!=false)
+      {
+          second_stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+      }
+      else
+      {
+          c.getshortestStiffeningCofficient((long)tpw+1);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                second_stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+            }
+      }
+      double set=((first_stiff_cofficient+second_stiff_cofficient)/2);
+      double stiff_cofficient=Double.parseDouble(df.format(set));
+      
+      
+                                                                     r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+ }
+ else
+ {
+                                                                c.getStiffeningCofficient(tpw, spw);
+                                                                stiffening_res=c.DqlStatement();
+                                                                if(stiffening_res.next()!=false)
+                                                                {
+                                                                    double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                                                                     r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                                }
+                                                                                                                                else
+      {
+          c.getshortestStiffeningCofficient((long)tpw);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+            }
+      }
+ }
+
+                                                    }
+    else
+    {
+        r1c = row.createCell(9);
+                                                        r1c.setCellValue("N/A");
+
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue("N/A");
+                                                        
+                                                        r1c = row.createCell(11);
+                                                        r1c.setCellValue(1);                                                        
+                                                        c.getEffectiveThickness(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveLength(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        }
+    }
+                                                    } else if (counter == 0 && crossJoins.size() >= 1) {
+                                                        
+
+                                                        r1c = row.createCell(9);
+                                                        r1c.setCellValue("N/A");
+
+                                                        r1c = row.createCell(10);
+                                                        r1c.setCellValue("N/A");
+                                                        
+                                                        r1c = row.createCell(11);
+                                                        r1c.setCellValue(1);                                                        
+                                                        c.getEffectiveThickness(GlobalId);
+                                                        grs=c.DqlStatement();
+                                                        if (grs.next() == false) {
+                                                            c.insertEffectiveThickness(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        } else {
+                                                            c.updateEffectiveLength(GlobalId, 1, Thickness_Of_Wall/1000);
+                                                            c.DmlStatement();
+                                                        }
+                                                    }
+                                                } else {
+                                                    if (counter == 0 && crossJoins.size() >= 2) {
+                                                        double tpw=3;
+                                                                double spw=(Length_Of_Wall/1000)/((Thickness_Of_Wall/1000)-0.01);
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(tpw);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(spw);                                                                
+ 
+                                                                c.getStiffeningCofficient(tpw, spw);
+                                                                stiffening_res=c.DqlStatement();
+                                                                if(stiffening_res.next()!=false)
+                                                                {
+                                                                    double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                                                                     r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                                }
+                                                                                                                                else
+      {
+          c.getshortestStiffeningCofficient((long)tpw);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+            }
+      }
+                                                    } else if (counter == 1 && crossJoins.size() >= 1) {
+                                                        double tpw=3;
+                                                                double spw=(Length_Of_Wall/1000)/((Thickness_Of_Wall/1000)-0.01);
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(tpw);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(spw);                                                                
+ 
+                                                                c.getStiffeningCofficient(tpw, spw);
+                                                                stiffening_res=c.DqlStatement();
+                                                                if(stiffening_res.next()!=false)
+                                                                {
+                                                                    double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                                                                     r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                                }
+                                                                                                                                else
+      {
+          c.getshortestStiffeningCofficient((long)tpw);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+            }
+      }
+                                                    } else if (counter >= 2 && crossJoins.size() >= 1) {
+                                                        double tpw=3;
+                                                                double spw=(Length_Of_Wall/1000)/((Thickness_Of_Wall/1000)-0.01);
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(tpw);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(spw);                                                                
+ 
+                                                                c.getStiffeningCofficient(tpw, spw);
+                                                                stiffening_res=c.DqlStatement();
+                                                                if(stiffening_res.next()!=false)
+                                                                {
+                                                                    double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                                                                     r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                                }
+                                                                                                                                else
+      {
+          c.getshortestStiffeningCofficient((long)tpw);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+            }
+      }
+                                                    } else if (counter == 0 && crossJoins.size() == 0 && jointwalls.size() == 0) {
+                                                      double tpw=3;
+                                                                double spw=(Length_Of_Wall/1000)/((Thickness_Of_Wall/1000)-0.01);
+                                                                r1c = row.createCell(9);
+                                                                r1c.setCellValue(tpw);
+
+                                                                r1c = row.createCell(10);
+                                                                r1c.setCellValue(spw);                                                                
+ 
+                                                                c.getStiffeningCofficient(tpw, spw);
+                                                                stiffening_res=c.DqlStatement();
+                                                                if(stiffening_res.next()!=false)
+                                                                {
+                                                                    double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                                                                     r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+                                                                }
+                                                                                                                                else
+      {
+          c.getshortestStiffeningCofficient((long)tpw);
+          stiffening_res=c.DqlStatement();
+           if(stiffening_res.next()!=false)
+            {
+                double stiff_cofficient = stiffening_res.getDouble("StiffeningCofficient");
+                r1c = row.createCell(11);
+                                                                    r1c.setCellValue(stiff_cofficient);
+                                                                                                                                   
+                                                                c.getEffectiveThickness(GlobalId);
+                                                                grs=c.DqlStatement();
+                                                                if (grs.next() == false) {
+                                                                    c.insertEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                } else {
+                                                                    c.updateEffectiveThickness(GlobalId, stiff_cofficient, Thickness_Of_Wall/1000);
+                                                                    c.DmlStatement();
+                                                                }
+            }
+      }
+                                                    }
+
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                }
+                                singlelinewalls = new DefaultListModel<String>();
+                                jointwalls = new DefaultListModel<String>();
+                                crossJoins = new DefaultListModel<String>();
+
+                            }
+
+                            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                            Path path = FileSystems.getDefault().getPath("").toAbsolutePath();
+                            File ouputfiles = new File(path + "\\IFC_Thickness_Validations.xlsx");
+                            FileOutputStream out = new FileOutputStream(ouputfiles);
+                            workbook.write(out);
+                            out.close();
+
+                        }
+                    }
+                    status.setText("Status: Check Performed");
+                    validatebutton.setEnabled(true);
+                } catch (Exception ex) {
+                    System.out.println(ex.toString());
+                    Logger.getLogger(MainWindowIfc.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else if (drpCheck.getSelectedIndex() == 4) {
+                
+                for (int i = 0; i < listModel.size(); i++) {
+                        Item item = listModel.getElementAt(i);
+                        String Val = (String) drpStorey.getSelectedItem();
+                        String DVal = item.getName();
+                        if (DVal.equals(Val)) {
+                            XSSFWorkbook workbook = new XSSFWorkbook();
+                            XSSFSheet sheet = workbook.createSheet();
+
+                            //Create First Row
+                            XSSFRow row1 = sheet.createRow(0);
+                            XSSFCell r1c1 = row1.createCell(0);
+                            r1c1.setCellValue("Entity");
+                            XSSFCell r1c2 = row1.createCell(1);
+                            r1c2.setCellValue("GlobalId");
+                            XSSFCell r1c3 = row1.createCell(2);
+                            r1c3.setCellValue("Storey");
+                            XSSFCell r1c4 = row1.createCell(3);
+                            r1c4.setCellValue("Effective Height of Wall");
+                            XSSFCell r1c5 = row1.createCell(4);
+                            r1c5.setCellValue("Effective Length of Wall(L)");
+                            XSSFCell r1c6 = row1.createCell(5);
+                            r1c6.setCellValue("Thickness");
+                            XSSFCell r1c7 = row1.createCell(6);
+                            r1c7.setCellValue("Stiffning Cofficient");
+                            XSSFCell r1c8 = row1.createCell(7);
+                            r1c8.setCellValue("Selenderness Ratio");
+                            XSSFCell r1c10 = row1.createCell(8);
+                            r1c10.setCellValue("Formula");
+                            
+                             c.getWalls(item.getPosiFloat(), FileId);
+                            Seprs = c.DqlStatement();
+                            
+                                           
+                int rowcount = 1;
+                            while(Seprs.next()!=false)
+                    {
+                    
+                    
+                    String GlobalId = Seprs.getString("GlobalId");
+                    
+                    c.getEffectiveLength(GlobalId);
+                    length_res=c.DqlStatement();
+                    
+                    if(length_res.next()!=false)
+                    {                   
+                    c.getEffectiveHeight(GlobalId);
+                    heights_res=c.DqlStatement();
+                        if(heights_res.next()!=false)
+                        {
+                    c.getEffectiveThickness(GlobalId);
+                        thickness_res=c.DqlStatement();
+                        if(thickness_res.next()!=false)
+                        {
+                            Double Effective_Height=heights_res.getDouble("EffectiveHeight");
+                            Double Effective_Length=length_res.getDouble("EffectiveLength");
+                            Double StiffeningCofficient=thickness_res.getDouble("StiffiningCofficient");
+                            Double Thickness=thickness_res.getDouble("ActualThickness");
+                     
+                            row1 = sheet.createRow(rowcount);
+                            rowcount++;
+                    
+                            r1c1 = row1.createCell(0);
+                            r1c1.setCellValue("Wall");
+                    
+                            r1c1 = row1.createCell(1);
+                            r1c1.setCellValue(GlobalId);
+                    
+                            r1c1 = row1.createCell(2);
+                            r1c1.setCellValue(item.Name);
+                    
+                            r1c1 = row1.createCell(3);
+                            r1c1.setCellValue(Effective_Height);
+                            
+                            if(Effective_Length!=-1)
+                            {
+                                r1c1 = row1.createCell(4);
+                                r1c1.setCellValue(Effective_Length);
+                            }
+                            
+                            r1c1 = row1.createCell(5);
+                            r1c1.setCellValue(Thickness);
+                            
+                            r1c1 = row1.createCell(6);
+                            r1c1.setCellValue(StiffeningCofficient);
+                            
+                            
+                            if(Effective_Length<Effective_Height && Effective_Length>0)
+                            {
+                                
+                                double Sr=Effective_Length/Thickness;
+                                
+                                r1c1 = row1.createCell(7);
+                                r1c1.setCellValue(Sr);
+                            
+                                r1c1 = row1.createCell(8);
+                                r1c1.setCellValue("Effective Length/Thickness");
+                            }
+                            else
+                            {
+                                double Sr=Effective_Height/(StiffeningCofficient*Thickness);
+                                
+                                r1c1 = row1.createCell(7);
+                                r1c1.setCellValue(Sr);
+                            
+                                r1c1 = row1.createCell(8);
+                                r1c1.setCellValue("Effective Height/(Stiffening Cofficient*Thickness)");
+                            }
+                            
+                           }
+                        }
+                    }
+                    status.setText("Status: Check Performed");
+                    validatebutton.setEnabled(true);
+                }
+                            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                            Path path = FileSystems.getDefault().getPath("").toAbsolutePath();
+                            File ouputfiles = new File(path + "\\IFC_Selenderness_Ratio.xlsx");
+                            FileOutputStream out = new FileOutputStream(ouputfiles);
+                            workbook.write(out);
+                            out.close();
+                        }
+                }
+            }
+                else
+                {
+                    validatebutton.setEnabled(true);
+                }
             
+        } catch (Exception ex) {
+            Logger.getLogger(MainWindowIfc.class.getName()).log(Level.SEVERE, null, ex);
         }
-                
-                
+        JTable tab;
+        JScrollPane sp;
+        Vector content = new Vector();
+        Vector header = new Vector();
+
+        JPanel p1;
+        JLabel l1;
+        p1 = new JPanel();
+        p1.setBounds(0, 150, 100, 100);
+        p1.setLayout(null);
+        p1.setBackground(Color.LIGHT_GRAY);
+        p1.setSize(800, 400);
+        l1 = new JLabel("Validation Summary");
+        l1.setBounds(300, 10, 200, 20);
+        l1.setFont(new Font("Comic Sans Ms", Font.BOLD, 14));
+        //l1.setForeground(Color.WHITE);
+        p1.add(l1);
+        Connect c = new Connect();
+        c.getReport();
+        try {
+            rs = c.DqlStatement();
+            mt = rs.getMetaData();
+
+            int count = mt.getColumnCount();
+            for (int i = 1; i <= count; i++) {
+                header.addElement(mt.getColumnName(i));
+            }
+            while (rs.next()) {
+                Vector row = new Vector(count);
+                for (int i = 1; i <= count; i++) {
+                    row.addElement(rs.getObject(i));
+                }
+                content.addElement(row);
+            }
+
+            tab = new JTable(content, header);
+            tab.setBackground(Color.BLUE);
+            tab.setColumnSelectionAllowed(false);
+            tab.setAutoscrolls(true);
+            tab.setGridColor(Color.BLUE);
+            tab.setFont(new Font("Monotype Corsiva", Font.PLAIN, 12));
+            tab.setForeground(Color.WHITE);
+
+            tab.setCursor(Cursor.getSystemCustomCursor("TEXT_CURSOR"));
+            tab.enable(false);
+            TableColumn col;
+            for (int i = 0; i < tab.getColumnCount(); i++) {
+                col = tab.getColumnModel().getColumn(i);
+                col.sizeWidthToFit();
+
+            }
+            sp = new JScrollPane(tab);
+
+            sp.setBounds(200, 50, 350, 170);
+
+            sp.setAutoscrolls(true);
+            sp.setVisible(true);
+            p1.add(sp);
+            this.add(p1);
+            p1.setBackground(new Color(204, 204, 204));
+            this.setVisible(true);
+        } catch (Exception ex) {
+
+        }
+
+
     }//GEN-LAST:event_validatebuttonActionPerformed
 
     private void btnexit1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnexit1ActionPerformed
-      if(JOptionPane.showConfirmDialog(this,"Do u Want to Exit this Application")==JOptionPane.OK_OPTION)
-        {
+        if (JOptionPane.showConfirmDialog(this, "Do u Want to Exit this Application") == JOptionPane.OK_OPTION) {
             this.setVisible(false);
         }   // TODO add your handling code here:
     }//GEN-LAST:event_btnexit1ActionPerformed
@@ -1283,21 +2535,15 @@ DefaultListModel<String> crossJoins=new DefaultListModel<String>();
     }//GEN-LAST:event_drpCheckActionPerformed
 
     private void drpStoreyItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_drpStoreyItemStateChanged
-        if(drpCheck.getSelectedIndex()==0)
-        {
+        if (drpCheck.getSelectedIndex() == 0) {
             status.setText("Status : Check not Selected");
-        }
-        else
-        {
-            if(drpStorey.getSelectedIndex()==0)
-            {
+        } else {
+            if (drpStorey.getSelectedIndex() == 0) {
                 status.setText("Status : Storey not Selected");
-            }
-            else
-            {
+            } else {
                 status.setText("Status : Press Validate Button to proceed");
             }
-             
+
         }
     }//GEN-LAST:event_drpStoreyItemStateChanged
 

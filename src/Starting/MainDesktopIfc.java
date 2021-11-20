@@ -7,49 +7,38 @@
 package Starting;
 
 
-import Archtree.demo.IfcTreeView;
-import Archtree.demo.StructureViewer;
+import Core_code.IFC2DB;
+
 import Login.Login;
-import Structural_Analysis.Connect;
+import Database_Connectivity.Connect;
+
+
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Image;
+import java.awt.FlowLayout;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.URL;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.ResultSet;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
-import javafx.scene.control.TreeView;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextPane;
-import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
-import javax.swing.text.StyledDocument;
-
-	
+import javafx.stage.Stage;
+import javax.swing.JScrollPane;
+import javax.swing.JTree;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 /**
  *
@@ -60,6 +49,7 @@ public class MainDesktopIfc extends javax.swing.JFrame {
     /**
      * Creates new form MainDesktopIfc
      */
+  
     String str;
     FileInputStream inputStream;
     Scanner sc;
@@ -72,8 +62,8 @@ public class MainDesktopIfc extends javax.swing.JFrame {
               JPanel jPanel=new JPanel();
               JButton j=new JButton();
                JComboBox jc;
-               StructureViewer s;
-               IfcTreeView t;
+               //StructureViewer s;
+               //IfcTreeView t;
               
     public MainDesktopIfc() {
         initComponents();
@@ -84,15 +74,17 @@ public class MainDesktopIfc extends javax.swing.JFrame {
         setBounds(0,0,width,height-40);
         jTextArea1.setForeground(Color.black);
                         jTextArea1.setBackground(Color.white);
-                        jTextArea2.setBackground(Color.white);
+                        //jTextArea2.setBackground(Color.white);
                         jTextArea1.setVisible(true);
                         
                         lb1.setForeground(Color.black);
                         lb1.setBackground(Color.white);
                         lb1.setVisible(true);
-                        s=new StructureViewer();
+                       // s=new StructureViewer();
                         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
-                        s.setVisible(false);
+                        
+                        //s.setVisible(false);
+                       
                         
     }
 
@@ -109,8 +101,7 @@ public class MainDesktopIfc extends javax.swing.JFrame {
         tree = new javax.swing.JTabbedPane();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        jTextArea2 = new javax.swing.JTextArea();
+        jTabbedPane1 = new javax.swing.JTabbedPane();
         process = new javax.swing.JProgressBar();
         lb1 = new javax.swing.JLabel();
         btnexit = new javax.swing.JButton();
@@ -134,6 +125,11 @@ public class MainDesktopIfc extends javax.swing.JFrame {
         jDesktopPane1.setBackground(new java.awt.Color(197, 226, 252));
 
         tree.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+        tree.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                treeMouseClicked(evt);
+            }
+        });
 
         jTextArea1.setEditable(false);
         jTextArea1.setColumns(20);
@@ -141,13 +137,7 @@ public class MainDesktopIfc extends javax.swing.JFrame {
         jScrollPane1.setViewportView(jTextArea1);
 
         tree.addTab("Specification", jScrollPane1);
-
-        jTextArea2.setEditable(false);
-        jTextArea2.setColumns(20);
-        jTextArea2.setRows(5);
-        jScrollPane2.setViewportView(jTextArea2);
-
-        tree.addTab("Tree View", jScrollPane2);
+        tree.addTab("Tree View", jTabbedPane1);
 
         process.setForeground(new java.awt.Color(255, 0, 0));
         process.setToolTipText("");
@@ -347,8 +337,151 @@ public class MainDesktopIfc extends javax.swing.JFrame {
                        // System.out.println(path);
                          process.setValue(100);
                         lb1.setText("File Loaded");
-                        t=s.getTree(path);
-                        jTextArea2.add(t);
+                        //t=s.getTree(path);
+     
+    DefaultMutableTreeNode proj=new DefaultMutableTreeNode("Project");  
+    DefaultMutableTreeNode site=new DefaultMutableTreeNode("Site");  
+    DefaultMutableTreeNode building=new DefaultMutableTreeNode("Building");  
+    proj.add(site);  
+    site.add(building);
+     String fileId = userPreferences.get("fileid","0");
+    Connect _con=new Connect();
+    
+    _con.GetUnit("length", fileId);
+    ResultSet unitres=_con.DqlStatement();
+    String LengthUnits="";
+     if(unitres.next()!=false)
+     {
+       LengthUnits=_con.GetFormattedUnit(unitres.getString("Unit"), unitres.getString("SubUnit"));
+     }
+    _con.getStorey(fileId);
+    ResultSet res=_con.DqlStatement();
+     while(res.next()!=false)
+     {
+               DefaultMutableTreeNode storey=new DefaultMutableTreeNode(res.getString("LevelName")); 
+               building.add(storey);
+               
+               
+               
+               
+               _con.getSlabs(res.getFloat("Position"),fileId);
+               ResultSet slabres=_con.DqlStatement();
+             
+               if(slabres.next()!=false)
+               {
+                    DefaultMutableTreeNode slabs=new DefaultMutableTreeNode("Slabs"); 
+                    storey.add(slabs);
+                    DefaultMutableTreeNode slab=new DefaultMutableTreeNode(slabres.getString("Name")); 
+                    slabs.add(slab);
+                        
+                    DefaultMutableTreeNode thickness=new DefaultMutableTreeNode("Thickness : "+new BigDecimal(slabres.getString("Thickness")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                    slab.add(thickness);
+                    
+                    while(slabres.next()!=false)
+                    { 
+                         slab=new DefaultMutableTreeNode(slabres.getString("Name")); 
+                        slabs.add(slab);
+                        
+                          thickness=new DefaultMutableTreeNode("Thickness : "+new BigDecimal(slabres.getString("Thickness")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                         slab.add(thickness);
+                    }
+               }
+               
+               
+               _con.getWalls(res.getFloat("Position"),fileId);
+               ResultSet wallres=_con.DqlStatement();
+               
+               if(wallres.next()!=false)
+               {
+                    DefaultMutableTreeNode walls=new DefaultMutableTreeNode("Walls"); 
+                    storey.add(walls); 
+                    DefaultMutableTreeNode wall=new DefaultMutableTreeNode(wallres.getString("Name")); 
+                        walls.add(wall);
+                        
+                        DefaultMutableTreeNode thickness=new DefaultMutableTreeNode("Thickness : "+new BigDecimal(wallres.getString("Thickness")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                        wall.add(thickness);
+                         
+                        DefaultMutableTreeNode height=new DefaultMutableTreeNode("Height : "+new BigDecimal(wallres.getString("Height")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                        wall.add(height);
+                        
+                        _con.getLengthOfWall(wallres.getString("GlobalId"), fileId);
+                        ResultSet lenres=_con.DqlStatement();
+                        
+                        if(lenres.next()!=false)
+                        {
+                            DefaultMutableTreeNode length=new DefaultMutableTreeNode("Length : "+new BigDecimal(lenres.getString("Length")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                            wall.add(length);
+                        }
+                    while(wallres.next()!=false)
+                    { 
+                        wall=new DefaultMutableTreeNode(wallres.getString("Name")); 
+                        walls.add(wall);
+                        
+                        thickness=new DefaultMutableTreeNode("Thickness : "+new BigDecimal(wallres.getString("Thickness")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                        wall.add(thickness);
+                         
+                        height=new DefaultMutableTreeNode("Height : "+new BigDecimal(wallres.getString("Height")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                        wall.add(height);
+                        
+                         _con.getLengthOfWall(wallres.getString("GlobalId"), fileId);
+                         lenres=_con.DqlStatement();
+                        
+                        if(lenres.next()!=false)
+                        {
+                            DefaultMutableTreeNode length=new DefaultMutableTreeNode("Length : "+new BigDecimal(lenres.getString("Length")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                            wall.add(length);
+                        }
+                        
+                    }
+               }
+               
+               _con.getOpenigs(res.getFloat("Position"),fileId);
+               ResultSet openres=_con.DqlStatement();
+               
+               if(openres.next()!=false)
+               {
+                    DefaultMutableTreeNode openings=new DefaultMutableTreeNode("Openings"); 
+                    storey.add(openings); 
+                    DefaultMutableTreeNode opening=new DefaultMutableTreeNode(openres.getString("Name")); 
+                        openings.add(opening);
+                        
+                        DefaultMutableTreeNode height=new DefaultMutableTreeNode("Height : "+new BigDecimal(openres.getString("Height")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                        opening.add(height);
+                         
+                        DefaultMutableTreeNode width=new DefaultMutableTreeNode("Width : "+new BigDecimal(openres.getString("Width")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                        opening.add(width);
+                        
+                     
+                    while(openres.next()!=false)
+                    { 
+                        opening=new DefaultMutableTreeNode(openres.getString("Name")); 
+                        openings.add(opening);
+                        
+                        height=new DefaultMutableTreeNode("Height : "+new BigDecimal(openres.getString("Height")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                        opening.add(height);
+                         
+                        width=new DefaultMutableTreeNode("Width : "+new BigDecimal(openres.getString("Width")).setScale(2, RoundingMode.HALF_EVEN)+" "+LengthUnits); 
+                        opening.add(width);
+                        
+                       
+                        
+                    }
+               }
+     }
+    
+          
+    JTree jt=new JTree(proj); 
+    jt.setVisible(true);
+   
+    JPanel newPanel =  new JPanel(new FlowLayout(FlowLayout.LEFT));
+    newPanel.setBounds(jTabbedPane1.getBounds());
+    newPanel.setMinimumSize(new Dimension(200,800));
+    newPanel.add(jt);
+    JScrollPane pane = new JScrollPane(newPanel);
+    pane.setBackground(Color.WHITE);
+    jTabbedPane1.add(pane);
+ 
+                      
                     }
                        
                         
@@ -373,6 +506,14 @@ public class MainDesktopIfc extends javax.swing.JFrame {
 
     private void exitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitActionPerformed
         // TODO add your handling code here:
+        
+        Connect _con =new Connect();
+        _con.ClearDatabase();
+        try {
+            _con.DmlStatement();
+        } catch (Exception ex) {
+            Logger.getLogger(MainDesktopIfc.class.getName()).log(Level.SEVERE, null, ex);
+        }
         this.dispose();
 
     }//GEN-LAST:event_exitActionPerformed
@@ -401,6 +542,13 @@ public class MainDesktopIfc extends javax.swing.JFrame {
 
         if(JOptionPane.showConfirmDialog(this,"Do u Want to Exit this Application")==JOptionPane.OK_OPTION)
         {
+            Connect _con =new Connect();
+            _con.ClearDatabase();
+            try {
+                _con.DmlStatement();
+            } catch (Exception ex) {
+                Logger.getLogger(MainDesktopIfc.class.getName()).log(Level.SEVERE, null, ex);
+            }
             this.setVisible(false);
         }
     }//GEN-LAST:event_btnexitActionPerformed
@@ -428,6 +576,10 @@ public class MainDesktopIfc extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_formWindowClosing
 
+    private void treeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_treeMouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_treeMouseClicked
+
     /**
      * @param args the command line arguments
      */
@@ -443,9 +595,8 @@ public class MainDesktopIfc extends javax.swing.JFrame {
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTextArea jTextArea1;
-    private javax.swing.JTextArea jTextArea2;
     private javax.swing.JLabel lb1;
     private javax.swing.JMenuItem open;
     private javax.swing.JProgressBar process;

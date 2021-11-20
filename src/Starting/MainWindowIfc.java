@@ -31,7 +31,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import luck.*;
 
 public class MainWindowIfc extends javax.swing.JFrame implements Runnable{
 
@@ -205,7 +204,7 @@ public class MainWindowIfc extends javax.swing.JFrame implements Runnable{
   
     private void exitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitActionPerformed
         // TODO add your handling code here:
-        Structural_Analysis.Connect c=new Structural_Analysis.Connect();
+        Database_Connectivity.Connect c=new Database_Connectivity.Connect();
         c.ClearDatabase();
         this.dispose();
         

@@ -5,6 +5,7 @@
  */
 package Login;
 
+import Database_Connectivity.Connect;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
@@ -22,7 +23,7 @@ import javax.swing.JOptionPane;
 public class Register extends javax.swing.JFrame {
 
     /**
-     * Creates new form signup
+     * Creates new form 
      */
     Connect c;
      Login l;

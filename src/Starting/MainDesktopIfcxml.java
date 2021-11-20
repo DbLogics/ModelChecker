@@ -6,11 +6,9 @@
 
 package Starting;
 
-import Archtree.demo.IfcTreeView;
-import Archtree.demo.StructureViewer;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.ScrollPane;
+
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,7 +27,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.TreeModel;
-import luck.DOMTreeTest;
+import IFC_XML_Code.DOMTreeTest;
 
 /**
  *

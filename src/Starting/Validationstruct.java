@@ -6,8 +6,8 @@
 
 package Starting;
 
-import Structural_Analysis.Connect;
-import Structural_Analysis.start;
+import Database_Connectivity.Connect;
+//import Structural_Analysis.start;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
@@ -171,9 +171,9 @@ public class Validationstruct extends javax.swing.JInternalFrame {
         {
             try {
                 //System.out.println(selectedFile.getAbsolutePath());
-                start s=new start();
+               // start s=new start();
                 
-                s.read(Path);
+                //s.read(Path);
                 status.setText("Status: Check Performed");
             } catch (Exception ex) {
                 Logger.getLogger(MainWindowIfc.class.getName()).log(Level.SEVERE, null, ex);

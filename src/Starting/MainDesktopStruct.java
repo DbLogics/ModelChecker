@@ -10,16 +10,10 @@ package Starting;
  *
  * @author DataByte Logics
  */
-import Archtree.demo.IfcTreeView;
-import Archtree.demo.StructureViewer;
-import java.awt.BasicStroke;
+
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Stroke;
 import java.awt.Toolkit;
-import java.awt.geom.Line2D;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Scanner;
@@ -52,8 +46,7 @@ public class MainDesktopStruct extends javax.swing.JFrame {
               JButton j=new JButton();
                JComboBox jc;
                
-StructureViewer s;
-               IfcTreeView t;
+
     public MainDesktopStruct() {
         initComponents();
         setIconImage(Toolkit.getDefaultToolkit().getImage("icons/type.png"));
@@ -70,8 +63,7 @@ StructureViewer s;
                         lb1.setForeground(Color.black);
                         lb1.setBackground(Color.white);
                         lb1.setVisible(true);
-                         s=new StructureViewer();
-                        s.setVisible(false);
+                        
                 
     }
     
@@ -312,8 +304,7 @@ StructureViewer s;
                     System.out.println(path);
                     process.setValue(100);
                     lb1.setText("File Loaded");
-                    t=s.getTree(path);
-                        jTextArea2.add(t);
+                  
                 }
                 catch (Exception ex) {
                     Logger.getLogger(MainWindowIfc.class.getName()).log(Level.SEVERE, null, ex);
@@ -377,11 +368,7 @@ ChooseAnalysis c=new ChooseAnalysis();
     /**
      * @param args the command line arguments
      */
-public static  void main(String[] as)
-{
-MainDesktopStruct d=new MainDesktopStruct();
-d.setVisible(true);
-}    
+ 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnexit;
